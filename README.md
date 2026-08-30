@@ -1,1 +1,1 @@
-<div align="center"><img align="top" width="665" height="364" src="./assets/night-shift-main.gif" alt="Niyant's Night Shift"><a href="https://niyants101.github.io/Niyants101/gateway/" title="Activate the Bat Signal"><img align="top" width="175" height="364" src="./assets/bat-signal-panel.png" alt="Activate the Bat Signal"></a></div>
+<div align="center"><a href="https://niyants101.github.io/Niyants101/gateway/" title="Find the Bat Signal"><img width="840" height="364" src="./assets/night-shift-final.gif" alt="Niyant's Night Shift" ismap></a></div>
