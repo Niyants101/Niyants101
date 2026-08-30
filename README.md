@@ -1,6 +1,1 @@
-<div align="center">
-
-![Niyant's Night Shift](./assets/night-shift-final.gif)
-
-</div>
-
+<div align="center"><img align="top" width="674" height="48" src="./assets/top-left.gif" alt=""><img align="top" width="79" height="48" src="./assets/top-middle.gif" alt=""><img align="top" width="87" height="48" src="./assets/top-right.gif" alt=""></div><div align="center"><img align="top" width="674" height="61" src="./assets/middle-left.gif" alt=""><a href="https://niyants101.github.io/Niyants101/gateway/" title="Activate the Bat Signal"><img align="top" width="79" height="61" src="./assets/bat-signal.gif" alt="Activate the Bat Signal"></a><img align="top" width="87" height="61" src="./assets/middle-right.gif" alt=""></div><div align="center"><img align="top" width="674" height="255" src="./assets/bottom-left.gif" alt="Niyant's Night Shift"><img align="top" width="79" height="255" src="./assets/bottom-middle.gif" alt=""><img align="top" width="87" height="255" src="./assets/bottom-right.gif" alt=""></div>
