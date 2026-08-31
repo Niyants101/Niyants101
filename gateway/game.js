@@ -6,6 +6,7 @@ const enter = document.querySelector("#enter");
 const message = document.querySelector("#message");
 
 let game = null;
+const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v2-complete";
 
 function readStorage(key, fallback = "") {
   try {
@@ -168,10 +169,7 @@ class RooftopGame {
     });
 
     document.querySelector("#returnButton").addEventListener("click", () => {
-      const githubReferrer = document.referrer.startsWith("https://github.com/");
-      window.location.href = githubReferrer
-        ? document.referrer
-        : "https://github.com/Niyants101";
+      window.location.href = "https://github.com/Niyants101";
     });
 
     document.querySelectorAll("[data-control]").forEach((button) => {
@@ -215,7 +213,7 @@ class RooftopGame {
     this.tutorialStep = 0;
     this.tutorialCompleteTimer = 0;
     this.tutorialActions = { jump: false, duck: false, ramp: false, move: false };
-    this.tutorialEnabled = readStorage("niyant-rooftop-tutorial-complete") !== "1";
+    this.tutorialEnabled = readStorage(TUTORIAL_STORAGE_KEY) !== "1";
     this.particles = [];
 
     this.controls.left = false;
@@ -342,7 +340,7 @@ class RooftopGame {
 
     if (this.tutorialStep === 4) {
       this.tutorialCompleteTimer = 1.8;
-      writeStorage("niyant-rooftop-tutorial-complete", "1");
+      writeStorage(TUTORIAL_STORAGE_KEY, "1");
     }
   }
 

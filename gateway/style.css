@@ -273,13 +273,13 @@ input { font: inherit; }
 
 .return-button {
   justify-self: start;
-  height: 38px;
-  padding: 0 14px;
+  height: 44px;
+  padding: 0 17px;
   border: 1px solid rgba(103, 245, 223, .48);
   border-radius: 2px;
   background: rgba(3, 15, 25, .68);
   color: #8cf6e5;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .12em;
   cursor: pointer;
   pointer-events: auto;
@@ -306,14 +306,14 @@ input { font: inherit; }
 
 .run-title span {
   font-weight: 700;
-  font-size: clamp(18px, 2.2vw, 28px);
+  font-size: clamp(24px, 3vw, 40px);
   letter-spacing: .2em;
 }
 
 .run-title small,
 .high-score small {
   color: #66e5d2;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: .25em;
 }
 
@@ -323,7 +323,7 @@ input { font: inherit; }
 }
 
 .high-score strong {
-  font-size: clamp(25px, 3vw, 38px);
+  font-size: clamp(34px, 4vw, 52px);
   letter-spacing: .12em;
 }
 
@@ -338,14 +338,14 @@ input { font: inherit; }
   transform: translateX(-50%);
   pointer-events: none;
   color: #76a0a7;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: .22em;
   text-shadow: 0 2px 12px #000;
 }
 
 .distance strong {
   color: #eaffff;
-  font-size: clamp(24px, 3vw, 36px);
+  font-size: clamp(32px, 4vw, 48px);
   letter-spacing: .12em;
 }
 
@@ -367,8 +367,8 @@ input { font: inherit; }
   left: 50%;
   bottom: 88px;
   z-index: 6;
-  width: min(88vw, 390px);
-  padding: 16px 18px 15px;
+  width: min(88vw, 470px);
+  padding: 21px 24px 19px;
   transform: translateX(-50%);
   border: 1px solid rgba(103, 245, 223, .5);
   background: linear-gradient(135deg, rgba(3, 15, 27, .92), rgba(5, 24, 34, .82));
@@ -395,56 +395,64 @@ input { font: inherit; }
   display: block;
   margin-bottom: 4px;
   color: #638b92;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: .28em;
 }
 
 .tutorial strong {
   display: block;
   color: #eaffff;
-  font-size: 19px;
+  font-size: 28px;
   letter-spacing: .22em;
 }
 
 .tutorial-keys {
   display: flex;
   justify-content: center;
-  gap: 7px;
-  margin: 10px 0 7px;
+  gap: 9px;
+  margin: 13px 0 10px;
 }
 
 .tutorial-keys kbd {
   display: grid;
-  min-width: 34px;
-  height: 31px;
-  padding: 0 8px;
+  min-width: 42px;
+  height: 38px;
+  padding: 0 10px;
   place-items: center;
   border: 1px solid #6fe6d5;
   border-bottom-width: 3px;
   border-radius: 4px;
   background: rgba(103, 245, 223, .08);
   color: #8affec;
-  font: 700 12px Arial, sans-serif;
+  font: 700 14px Arial, sans-serif;
 }
 
 .tutorial p {
   margin: 0;
   color: #8ca8ae;
-  font: 12px Arial, sans-serif;
+  font: 15px Arial, sans-serif;
 }
 
 .help {
   position: fixed;
-  left: 28px;
-  bottom: 27px;
+  left: 30px;
+  bottom: 25px;
   z-index: 4;
   display: flex;
-  gap: 20px;
-  color: rgba(159, 198, 203, .65);
-  font-size: 8px;
+  gap: 12px;
+  color: rgba(218, 250, 252, .9);
+  font-size: 15px;
   letter-spacing: .12em;
   pointer-events: none;
-  animation: helper 8s ease forwards;
+}
+
+.help span {
+  padding: 12px 15px;
+  border: 1px solid rgba(103, 245, 223, .28);
+  border-radius: 3px;
+  background: rgba(3, 15, 25, .68);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(8px);
 }
 
 .gameover {
@@ -489,13 +497,13 @@ input { font: inherit; }
 .gameover p {
   margin: 0 0 9px;
   color: #ff657a;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .28em;
 }
 
 .gameover h1 {
   margin: 0;
-  font-size: clamp(27px, 5vw, 43px);
+  font-size: clamp(36px, 5vw, 52px);
   letter-spacing: .12em;
 }
 
@@ -505,7 +513,7 @@ input { font: inherit; }
   gap: 34px;
   margin: 22px 0;
   color: #6f969e;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: .15em;
 }
 
@@ -516,7 +524,7 @@ input { font: inherit; }
 
 .results strong {
   color: #eaffff;
-  font-size: 18px;
+  font-size: 25px;
 }
 
 .gameover button {
@@ -526,7 +534,7 @@ input { font: inherit; }
   border-radius: 2px;
   background: rgba(101, 234, 214, .1);
   color: #70f4df;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: .12em;
   cursor: pointer;
 }
@@ -540,7 +548,7 @@ input { font: inherit; }
   display: block;
   margin-top: 12px;
   color: #56767d;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .13em;
 }
 
@@ -550,19 +558,20 @@ input { font: inherit; }
   bottom: 20px;
   z-index: 6;
   display: none;
-  grid-template-columns: 46px 1fr 1fr 46px;
-  gap: 8px;
-  width: min(92vw, 410px);
+  grid-template-columns: 54px 1fr 1fr 54px;
+  gap: 10px;
+  width: min(92vw, 460px);
   transform: translateX(-50%);
 }
 
 .touch-controls button {
-  height: 48px;
+  height: 56px;
   padding: 0 10px;
   border: 1px solid rgba(103, 245, 223, .55);
   border-radius: 2px;
   background: rgba(3, 15, 25, .78);
   color: #84f6e5;
+  font-size: 15px;
   backdrop-filter: blur(8px);
 }
 
@@ -589,12 +598,15 @@ input { font: inherit; }
   .code-row { grid-template-columns: 1fr; }
   .gate button { width: 100%; }
   .hud { inset: 14px 14px auto; }
-  .return-button { height: 34px; padding: 0 9px; font-size: 8px; }
-  .run-title span { font-size: 15px; }
-  .run-title small, .high-score small { font-size: 7px; }
-  .high-score strong { font-size: 20px; }
-  .distance strong { font-size: 23px; }
-  .tutorial { padding: 13px 14px; }
+  .return-button { height: 38px; padding: 0 10px; font-size: 9px; }
+  .run-title span { font-size: 20px; }
+  .run-title small, .high-score small { font-size: 9px; }
+  .high-score strong { font-size: 28px; }
+  .distance { font-size: 10px; }
+  .distance strong { font-size: 28px; }
+  .tutorial { padding: 16px; }
+  .tutorial strong { font-size: 23px; }
+  .tutorial p { font-size: 13px; }
   .gameover { padding: 29px 24px 26px; }
 }
 
