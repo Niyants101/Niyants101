@@ -1,1 +1,1 @@
-<div align="center"><a href="https://niyant-night-shift-gateway.niyant-s101.chatgpt.site/signal" title="Find the Bat Signal"><img width="840" height="364" src="./assets/night-shift-final.gif" alt="Niyant's Night Shift" ismap></a></div>
+<div align="center"><a href="https://niyants101.github.io/Niyants101/gateway/" title="Find the Bat Signal"><img width="840" height="364" src="./assets/night-shift-final.gif" alt="Niyant's Night Shift" ismap></a></div>
