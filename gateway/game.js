@@ -346,12 +346,12 @@ class RooftopGame {
     this.damageFlash = 0;
     this.damageBannerTime = 0;
     this.joker = null;
-    this.nextJokerDistance = Number.POSITIVE_INFINITY;
     this.nextBossTime = Number.POSITIVE_INFINITY;
+    this.bossArenaActive = false;
     this.jokerEncounters = 0;
     this.lastVillain = null;
     this.villainQueue = this.shuffleVillains(Object.keys(VILLAIN_PROFILES));
-    this.scheduleNextBossEncounter(true);
+    if (!this.tutorialEnabled) this.scheduleNextBossEncounter(true);
     this.bossBannerTime = 0;
     this.throwCooldown = 0;
     this.throwAnimation = 0;
@@ -562,6 +562,9 @@ class RooftopGame {
         this.tutorialEnabled = false;
         this.tutorialNode.classList.add("hidden");
         this.helpNode.classList.remove("hidden");
+        if (!this.joker && !Number.isFinite(this.nextBossTime)) {
+          this.scheduleNextBossEncounter(true);
+        }
       }
     }
   }
@@ -646,6 +649,21 @@ class RooftopGame {
   }
 
   fillWorld() {
+    if (this.bossArenaActive) {
+      const arena = this.platforms.find((platform) => (
+        this.player.x >= platform.x && this.player.x <= platform.x + platform.width
+      ));
+      if (arena) {
+        arena.width = Math.max(arena.width, 1900 - arena.x);
+        this.platforms = this.platforms
+          .filter((platform) => platform === arena || platform.x + platform.width < arena.x)
+          .sort((first, second) => first.x - second.x);
+      }
+      this.obstacles = [];
+      this.ramps = [];
+      return;
+    }
+
     let last = this.platforms[this.platforms.length - 1];
     while (last.x + last.width < 1700) {
       this.addPlatform();
@@ -746,15 +764,10 @@ class RooftopGame {
   }
 
   scheduleNextBossEncounter(firstEncounter = false) {
-    const minimumDelay = firstEncounter ? 10 : 18;
-    const maximumDelay = firstEncounter ? 23 : 38;
-    const minimumDistance = firstEncounter ? 320 : 560;
-    const maximumDistance = firstEncounter ? 720 : 1180;
+    const minimumDelay = firstEncounter ? 12 : 22;
+    const maximumDelay = firstEncounter ? 34 : 58;
     this.nextBossTime = this.elapsed + minimumDelay + this.combatRandom() * (
       maximumDelay - minimumDelay
-    );
-    this.nextJokerDistance = this.distance + minimumDistance + this.combatRandom() * (
-      maximumDistance - minimumDistance
     );
   }
 
@@ -764,14 +777,13 @@ class RooftopGame {
     ));
     if (!arena) return null;
 
+    this.bossArenaActive = true;
     arena.width = Math.max(arena.width, 1900 - arena.x);
     this.platforms = this.platforms
       .filter((platform) => platform === arena || platform.x + platform.width < arena.x)
       .sort((first, second) => first.x - second.x);
-    this.ramps = this.ramps.filter((ramp) => ramp.x + ramp.width < this.player.x - 90);
-    this.obstacles = this.obstacles.filter((obstacle) => (
-      obstacle.x + obstacle.width < this.player.x - 90
-    ));
+    this.ramps = [];
+    this.obstacles = [];
     this.fillWorld();
     return arena;
   }
@@ -787,7 +799,6 @@ class RooftopGame {
     const arenaY = arena?.y ?? 410;
     this.jokerEncounters += 1;
     this.nextBossTime = Number.POSITIVE_INFINITY;
-    this.nextJokerDistance = Number.POSITIVE_INFINITY;
     this.batarangs = [];
     this.bombs = [];
     this.playerHearts = this.maxPlayerHearts;
@@ -1698,6 +1709,8 @@ class RooftopGame {
       if (this.joker.defeatTimer <= 0 || this.joker.feet > 620) {
         this.joker = null;
         this.bombs = [];
+        this.bossArenaActive = false;
+        this.fillWorld();
         this.phaseNode.textContent = "IN PURSUIT";
         this.updateHearts();
       }
@@ -1809,8 +1822,7 @@ class RooftopGame {
       !this.tutorialEnabled &&
       this.player.grounded &&
       !this.player.onRamp &&
-      this.elapsed >= this.nextBossTime &&
-      this.distance >= this.nextJokerDistance
+      this.elapsed >= this.nextBossTime
     ) {
       this.spawnVillain();
     }
