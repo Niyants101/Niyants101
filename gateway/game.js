@@ -10,35 +10,51 @@ const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v2-complete";
 const VILLAIN_PROFILES = Object.freeze({
   joker: {
     name: "JOKER",
-    health: 7,
+    health: 10,
     color: "#b26ade",
     hitColor: "#75ff8f",
-    minDelay: 1.6,
-    maxDelay: 2.4,
+    minDelay: 1.45,
+    maxDelay: 2.15,
+    meleeLabel: "CROWBAR RUSH",
+    meleeWindup: 0.72,
+    meleeSpeed: 470,
+    meleeReach: 18,
   },
   bane: {
     name: "BANE",
-    health: 11,
+    health: 14,
     color: "#e06b50",
     hitColor: "#72f4df",
-    minDelay: 1.9,
-    maxDelay: 2.7,
+    minDelay: 1.65,
+    maxDelay: 2.35,
+    meleeLabel: "VENOM CHARGE",
+    meleeWindup: 0.78,
+    meleeSpeed: 570,
+    meleeReach: 10,
   },
   riddler: {
     name: "RIDDLER",
-    health: 8,
+    health: 11,
     color: "#5be07c",
     hitColor: "#d8ff65",
-    minDelay: 2.05,
-    maxDelay: 2.8,
+    minDelay: 1.7,
+    maxDelay: 2.4,
+    meleeLabel: "CANE STRIKE",
+    meleeWindup: 0.86,
+    meleeSpeed: 430,
+    meleeReach: 20,
   },
   penguin: {
     name: "PENGUIN",
-    health: 9,
+    health: 12,
     color: "#78a9dc",
     hitColor: "#b9e8ff",
-    minDelay: 2,
-    maxDelay: 2.8,
+    minDelay: 1.75,
+    maxDelay: 2.45,
+    meleeLabel: "UMBRELLA LUNGE",
+    meleeWindup: 0.8,
+    meleeSpeed: 445,
+    meleeReach: 22,
   },
 });
 
@@ -110,6 +126,7 @@ class RooftopGame {
     this.overNode = document.querySelector("#gameover");
     this.finalScoreNode = document.querySelector("#finalScore");
     this.finalBestNode = document.querySelector("#finalBest");
+    this.heartsNode = document.querySelector("#hearts");
 
     this.controls = {
       left: false,
@@ -141,6 +158,15 @@ class RooftopGame {
   random(seed) {
     const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
     return value - Math.floor(value);
+  }
+
+  combatRandom() {
+    if (globalThis.crypto?.getRandomValues) {
+      const value = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(value);
+      return value[0] / 4294967296;
+    }
+    return Math.random();
   }
 
   clamp(value, minimum, maximum) {
@@ -258,11 +284,16 @@ class RooftopGame {
     this.particles = [];
     this.batarangs = [];
     this.bombs = [];
+    this.playerHearts = 3;
+    this.maxPlayerHearts = 3;
+    this.meleeInvulnerability = 0;
+    this.damageFlash = 0;
+    this.damageBannerTime = 0;
     this.joker = null;
     this.nextJokerDistance = 500;
     this.jokerEncounters = 0;
     this.lastVillain = null;
-    this.villainQueue = ["joker", ...this.shuffleVillains(["bane", "riddler", "penguin"], 31)];
+    this.villainQueue = this.shuffleVillains(Object.keys(VILLAIN_PROFILES));
     this.bossBannerTime = 0;
     this.throwCooldown = 0;
     this.throwAnimation = 0;
@@ -300,6 +331,7 @@ class RooftopGame {
 
     this.fillWorld();
     this.scoreNode.textContent = "000000";
+    this.updateHearts();
     this.updateTutorialDisplay();
 
     if (skipIntro) this.showPlayingInterface();
@@ -337,6 +369,38 @@ class RooftopGame {
     this.finalScoreNode.textContent = this.pad(finalScore);
     this.finalBestNode.textContent = this.pad(this.highScore);
     this.overNode.classList.remove("hidden");
+  }
+
+  updateHearts() {
+    const fullHearts = Math.max(0, this.playerHearts);
+    const emptyHearts = Math.max(0, this.maxPlayerHearts - fullHearts);
+    this.heartsNode.textContent = `${"♥ ".repeat(fullHearts)}${"♡ ".repeat(emptyHearts)}`.trim();
+    this.heartsNode.classList.toggle("critical", fullHearts === 1);
+    this.heartsNode.setAttribute(
+      "aria-label",
+      `Batman armor: ${fullHearts} ${fullHearts === 1 ? "heart" : "hearts"}`,
+    );
+  }
+
+  takeMeleeDamage() {
+    if (this.phase !== "playing" || this.meleeInvulnerability > 0) return false;
+
+    this.playerHearts = Math.max(0, this.playerHearts - 1);
+    this.meleeInvulnerability = 1.1;
+    this.damageFlash = 0.32;
+    this.damageBannerTime = 1.05;
+    this.player.x = this.clamp(this.player.x - 34, 108, 365);
+    this.player.velocityX = -250;
+    if (this.player.grounded) {
+      this.player.grounded = false;
+      this.player.onRamp = null;
+      this.player.velocityY = -285;
+    }
+    this.spawnDust(this.player.x + 15, this.player.feet - 42, 20, "#ff6279");
+    this.updateHearts();
+
+    if (this.playerHearts === 0) this.finishRun();
+    return true;
   }
 
   updateTutorialDisplay() {
@@ -585,11 +649,10 @@ class RooftopGame {
     this.particles = this.particles.filter((particle) => particle.life > 0);
   }
 
-  shuffleVillains(villains, salt) {
+  shuffleVillains(villains) {
     const shuffled = [...villains];
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
-      const characterSeed = shuffled[index].charCodeAt(0) + shuffled[index].charCodeAt(1);
-      const swapIndex = Math.floor(this.random(salt + index * 31 + characterSeed) * (index + 1));
+      const swapIndex = Math.floor(this.combatRandom() * (index + 1));
       [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
     }
     return shuffled;
@@ -597,10 +660,7 @@ class RooftopGame {
 
   nextVillain() {
     if (this.villainQueue.length === 0) {
-      this.villainQueue = this.shuffleVillains(
-        Object.keys(VILLAIN_PROFILES),
-        this.seed + this.jokerEncounters * 23,
-      );
+      this.villainQueue = this.shuffleVillains(Object.keys(VILLAIN_PROFILES));
       if (this.villainQueue[0] === this.lastVillain) {
         this.villainQueue.push(this.villainQueue.shift());
       }
@@ -632,15 +692,21 @@ class RooftopGame {
     const arena = this.prepareBossArena();
     const kind = this.nextVillain();
     const profile = VILLAIN_PROFILES[kind];
-    const maxHealth = profile.health + Math.min(Math.floor(this.jokerEncounters / 4), 3);
+    const maxHealth = profile.health + Math.min(Math.floor(this.jokerEncounters / 2), 6);
+    const baseTarget = kind === "bane" ? 750 : (kind === "penguin" ? 700 : 720);
+    const targetX = baseTarget + (this.combatRandom() - 0.5) * 54;
+    const entryStyle = this.combatRandom() < 0.45 ? "drop" : "dash";
+    const arenaY = arena?.y ?? 410;
     this.jokerEncounters += 1;
     this.nextJokerDistance += 500;
     this.batarangs = [];
     this.bombs = [];
     this.joker = {
-      x: 1040,
-      targetX: 730,
-      feet: arena?.y ?? 410,
+      x: entryStyle === "drop" ? targetX : 1040,
+      targetX,
+      feet: entryStyle === "drop" ? -105 : arenaY,
+      landingFeet: arenaY,
+      entryStyle,
       kind,
       name: profile.name,
       color: profile.color,
@@ -648,15 +714,18 @@ class RooftopGame {
       maxHealth,
       state: "entering",
       attackTimer: 1.05,
-      lastAttack: this.random(this.jokerEncounters * 29) > 0.5 ? 0 : 1,
+      lastAttack: -1,
       attackRepeat: 0,
       attackMode: null,
       modeTimer: 0,
+      meleeTargetX: 0,
+      meleeConnected: false,
+      meleeTrailTimer: 0,
       attackLabel: "",
       attackLabelTimer: 0,
       hitFlash: 0,
       defeatTimer: 0,
-      velocityY: 0,
+      velocityY: entryStyle === "drop" ? 70 : 0,
       rotation: 0,
     };
     this.bossBannerTime = 3.2;
@@ -678,7 +747,7 @@ class RooftopGame {
 
   throwJokerBomb() {
     if (!this.joker || this.joker.state === "defeated") return;
-    const variation = this.random(this.elapsed * 9 + this.jokerEncounters * 17);
+    const variation = this.combatRandom();
     this.bombs.push({
       kind: "joker-bomb",
       x: this.joker.x - 23,
@@ -698,7 +767,7 @@ class RooftopGame {
 
   throwJokerGas() {
     if (!this.joker || this.joker.state === "defeated") return;
-    const variation = this.random(this.elapsed * 7 + this.jokerEncounters * 19);
+    const variation = this.combatRandom();
     this.bombs.push({
       kind: "joker-gas",
       x: this.joker.x - 24,
@@ -735,12 +804,25 @@ class RooftopGame {
   }
 
   startBaneCharge() {
-    this.joker.attackMode = "bane-charge-windup";
-    this.joker.modeTimer = 0.72;
+    this.startVillainMelee();
+  }
+
+  startVillainMelee() {
+    if (!this.joker || this.joker.state === "defeated") return;
+    const profile = VILLAIN_PROFILES[this.joker.kind];
+    this.joker.attackMode = "melee-windup";
+    this.joker.modeTimer = profile.meleeWindup;
+    this.joker.meleeTargetX = this.clamp(
+      this.player.x + profile.meleeReach,
+      126,
+      395,
+    );
+    this.joker.meleeConnected = false;
+    this.joker.meleeTrailTimer = 0;
   }
 
   spawnRiddlerOrbs() {
-    const firstHigh = this.random(this.elapsed * 11 + this.jokerEncounters * 5) > 0.5;
+    const firstHigh = this.combatRandom() > 0.5;
     [firstHigh, !firstHigh].forEach((high, index) => {
       this.bombs.push({
         kind: "riddler-orb",
@@ -761,7 +843,7 @@ class RooftopGame {
   }
 
   spawnRiddlerLaser() {
-    const high = this.random(this.elapsed * 17 + this.jokerEncounters * 13) > 0.5;
+    const high = this.combatRandom() > 0.5;
     this.bombs.push({
       kind: "riddler-laser",
       x: 0,
@@ -780,7 +862,7 @@ class RooftopGame {
   }
 
   spawnPenguinMissiles() {
-    const firstHigh = this.random(this.elapsed * 21 + this.jokerEncounters * 3) > 0.5;
+    const firstHigh = this.combatRandom() > 0.5;
     [firstHigh, !firstHigh].forEach((high, index) => {
       this.bombs.push({
         kind: "penguin-missile",
@@ -821,17 +903,25 @@ class RooftopGame {
   scheduleVillainAttack() {
     if (!this.joker) return;
     const profile = VILLAIN_PROFILES[this.joker.kind];
-    const variation = this.random(this.elapsed * 13 + this.jokerEncounters * 37);
-    this.joker.attackTimer = profile.minDelay + variation * (profile.maxDelay - profile.minDelay);
+    const variation = this.combatRandom();
+    const encounterPressure = Math.min(Math.max(0, this.jokerEncounters - 1) * 0.025, 0.22);
+    const enragedPressure = this.joker.health <= this.joker.maxHealth * 0.5 ? 0.16 : 0;
+    const pressure = encounterPressure + enragedPressure;
+    const minimum = Math.max(1.18, profile.minDelay - pressure);
+    const maximum = Math.max(minimum + 0.38, profile.maxDelay - pressure);
+    this.joker.attackTimer = minimum + variation * (maximum - minimum);
   }
 
   performVillainAttack() {
     if (!this.joker || this.joker.state === "defeated") return;
-    let attack = this.random(this.elapsed * 19 + this.jokerEncounters * 43) > 0.5 ? 1 : 0;
+    const attackCount = this.joker.kind === "bane" ? 2 : 3;
+    let attack = Math.floor(this.combatRandom() * attackCount);
     if (attack === this.joker.lastAttack) {
       this.joker.attackRepeat += 1;
       if (this.joker.attackRepeat > 1) {
-        attack = attack === 0 ? 1 : 0;
+        const alternatives = Array.from({ length: attackCount }, (_, index) => index)
+          .filter((index) => index !== attack);
+        attack = alternatives[Math.floor(this.combatRandom() * alternatives.length)];
         this.joker.attackRepeat = 0;
       }
     } else {
@@ -843,35 +933,46 @@ class RooftopGame {
       if (attack === 0) {
         this.joker.attackLabel = "BOMB TOSS";
         this.throwJokerBomb();
-      } else {
+      } else if (attack === 1) {
         this.joker.attackLabel = "LAUGHING GAS";
         this.throwJokerGas();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.joker.meleeLabel;
+        this.startVillainMelee();
       }
     } else if (this.joker.kind === "bane") {
       if (attack === 0) {
         this.joker.attackLabel = "GROUND BREAKER";
         this.spawnBaneWave();
       } else {
-        this.joker.attackLabel = "VENOM CHARGE";
+        this.joker.attackLabel = VILLAIN_PROFILES.bane.meleeLabel;
         this.startBaneCharge();
       }
     } else if (this.joker.kind === "riddler") {
       if (attack === 0) {
         this.joker.attackLabel = "QUESTION VOLLEY";
         this.spawnRiddlerOrbs();
-      } else {
+      } else if (attack === 1) {
         this.joker.attackLabel = "RIDDLE BEAM";
         this.spawnRiddlerLaser();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.riddler.meleeLabel;
+        this.startVillainMelee();
       }
     } else if (attack === 0) {
       this.joker.attackLabel = "UMBRELLA MISSILES";
       this.spawnPenguinMissiles();
-    } else {
+    } else if (attack === 1) {
       this.joker.attackLabel = "PENGUIN BOT";
       this.spawnPenguinBot();
+    } else {
+      this.joker.attackLabel = VILLAIN_PROFILES.penguin.meleeLabel;
+      this.startVillainMelee();
     }
 
-    this.joker.attackLabelTimer = 1.05;
+    this.joker.attackLabelTimer = this.joker.attackMode === "melee-windup"
+      ? VILLAIN_PROFILES[this.joker.kind].meleeWindup + 0.58
+      : 1.05;
     this.scheduleVillainAttack();
   }
 
@@ -1107,42 +1208,77 @@ class RooftopGame {
       return;
     }
 
+    const dropping = this.joker.state === "entering" && this.joker.entryStyle === "drop";
     const surface = this.getSurface(this.joker.x);
-    if (surface) {
+    if (surface && !dropping) {
       this.joker.feet += (surface.y - this.joker.feet) * (1 - Math.exp(-15 * delta));
     }
 
     if (this.joker.state === "entering") {
-      this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-2.7 * delta));
-      if (Math.abs(this.joker.x - this.joker.targetX) < 8) {
+      if (this.joker.entryStyle === "drop") {
+        this.joker.velocityY += 980 * delta;
+        this.joker.feet += this.joker.velocityY * delta;
+        if (this.joker.feet >= this.joker.landingFeet) {
+          this.joker.feet = this.joker.landingFeet;
+          this.joker.velocityY = 0;
+          this.joker.state = "fighting";
+          this.joker.attackTimer = 0.9 + this.combatRandom() * 0.38;
+          this.spawnDust(this.joker.x, this.joker.feet - 2, 26, this.joker.color);
+        }
+      } else {
+        this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-2.7 * delta));
+      }
+      if (this.joker.entryStyle === "dash" && Math.abs(this.joker.x - this.joker.targetX) < 8) {
         this.joker.state = "fighting";
-        this.joker.attackTimer = 0.95 + this.random(this.jokerEncounters * 41) * 0.4;
+        this.joker.attackTimer = 0.9 + this.combatRandom() * 0.38;
       }
       return;
     }
 
-    if (this.joker.attackMode === "bane-charge-windup") {
+    if (this.joker.attackMode === "melee-windup") {
       this.joker.modeTimer -= delta;
-      if (this.joker.modeTimer <= 0) this.joker.attackMode = "bane-charge";
+      this.joker.x = Math.min(this.joker.x + 22 * delta, this.joker.targetX + 28);
+      if (this.joker.modeTimer <= 0) this.joker.attackMode = "melee-strike";
       return;
     }
 
-    if (this.joker.attackMode === "bane-charge") {
-      this.joker.x -= 510 * delta;
-      if (this.joker.x <= 285) this.joker.attackMode = "bane-return";
+    if (this.joker.attackMode === "melee-strike") {
+      const meleeSpeed = VILLAIN_PROFILES[this.joker.kind].meleeSpeed;
+      this.joker.x -= meleeSpeed * delta;
+      this.joker.meleeTrailTimer -= delta;
+      if (this.joker.meleeTrailTimer <= 0) {
+        this.spawnDust(
+          this.joker.x + 24,
+          this.joker.feet - 7,
+          this.joker.kind === "bane" ? 7 : 4,
+          this.joker.color,
+        );
+        this.joker.meleeTrailTimer = 0.085;
+      }
+      if (this.joker.x <= this.joker.meleeTargetX) {
+        this.joker.x = this.joker.meleeTargetX;
+        this.joker.attackMode = "melee-recover";
+        this.joker.modeTimer = 0.18;
+      }
       return;
     }
 
-    if (this.joker.attackMode === "bane-return") {
+    if (this.joker.attackMode === "melee-recover") {
+      this.joker.modeTimer -= delta;
+      if (this.joker.modeTimer <= 0) this.joker.attackMode = "melee-return";
+      return;
+    }
+
+    if (this.joker.attackMode === "melee-return") {
       this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-3.4 * delta));
-      if (Math.abs(this.joker.x - this.joker.targetX) < 9) this.joker.attackMode = null;
+      if (Math.abs(this.joker.x - this.joker.targetX) < 9) {
+        this.joker.attackMode = null;
+        this.joker.meleeConnected = false;
+      }
       return;
     }
 
-    const baseTarget = this.joker.kind === "bane"
-      ? 750
-      : (this.joker.kind === "penguin" ? 700 : 720);
-    const targetX = baseTarget + Math.sin(this.elapsed * 0.9) * 34;
+    const targetX = this.joker.targetX + Math.sin(this.elapsed * 0.9) * 38;
     this.joker.x += (targetX - this.joker.x) * (1 - Math.exp(-2.4 * delta));
     this.joker.attackTimer -= delta;
     if (this.joker.attackTimer <= 0) this.performVillainAttack();
@@ -1152,6 +1288,9 @@ class RooftopGame {
     this.throwCooldown = Math.max(0, this.throwCooldown - delta);
     this.throwAnimation = Math.max(0, this.throwAnimation - delta);
     this.bossBannerTime = Math.max(0, this.bossBannerTime - delta);
+    this.meleeInvulnerability = Math.max(0, this.meleeInvulnerability - delta);
+    this.damageFlash = Math.max(0, this.damageFlash - delta);
+    this.damageBannerTime = Math.max(0, this.damageBannerTime - delta);
 
     if (this.controls.throwQueued) {
       this.throwBatarang();
@@ -1217,22 +1356,37 @@ class RooftopGame {
     return null;
   }
 
+  meleeCollisionBox(villain) {
+    const sizes = {
+      joker: { width: 58, height: 86 },
+      bane: { width: 82, height: 104 },
+      riddler: { width: 62, height: 94 },
+      penguin: { width: 68, height: 91 },
+    };
+    const size = sizes[villain.kind];
+    return {
+      x: villain.x - size.width / 2,
+      y: villain.feet - size.height,
+      width: size.width,
+      height: size.height - 6,
+    };
+  }
+
   checkCombatCollisions(playerBox) {
     if (
-      this.joker?.kind === "bane" &&
-      this.joker.attackMode === "bane-charge"
+      this.joker &&
+      ["melee-strike", "melee-recover"].includes(this.joker.attackMode) &&
+      !this.joker.meleeConnected
     ) {
-      const baneBox = {
-        x: this.joker.x - 34,
-        y: this.joker.feet - 94,
-        width: 68,
-        height: 86,
-      };
-      if (this.overlaps(playerBox, baneBox)) {
-        this.finishRun();
-        return;
+      const meleeBox = this.meleeCollisionBox(this.joker);
+      if (this.overlaps(playerBox, meleeBox)) {
+        this.joker.meleeConnected = true;
+        this.takeMeleeDamage();
+        if (this.phase !== "playing") return;
       }
     }
+
+    if (this.meleeInvulnerability > 0) return;
 
     for (const bomb of this.bombs) {
       if (bomb.harmless) continue;
@@ -1907,7 +2061,7 @@ class RooftopGame {
     const context = this.context;
     const bane = this.joker;
     const runCycle = Math.sin(this.elapsed * 11) * (bane.state === "entering" ? 5 : 2);
-    const charging = bane.attackMode === "bane-charge";
+    const charging = ["melee-strike", "melee-recover"].includes(bane.attackMode);
 
     context.save();
     context.translate(bane.x, bane.feet);
@@ -1983,7 +2137,7 @@ class RooftopGame {
 
     context.strokeStyle = "#62efac";
     context.shadowColor = "#62efac";
-    context.shadowBlur = bane.attackMode?.startsWith("bane-charge") ? 13 : 6;
+    context.shadowBlur = bane.attackMode?.startsWith("melee-") ? 13 : 6;
     context.lineWidth = 3;
     context.beginPath();
     context.moveTo(-16, -72);
@@ -1998,7 +2152,9 @@ class RooftopGame {
     const context = this.context;
     const riddler = this.joker;
     const runCycle = Math.sin(this.elapsed * 13) * (riddler.state === "entering" ? 5 : 1.5);
-    const casting = riddler.attackLabelTimer > 0;
+    const meleePose = riddler.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(riddler.attackMode);
+    const casting = riddler.attackLabelTimer > 0 || meleePose;
 
     context.save();
     context.translate(riddler.x, riddler.feet);
@@ -2041,7 +2197,7 @@ class RooftopGame {
     context.lineWidth = 8;
     context.beginPath();
     context.moveTo(-14, -55);
-    context.lineTo(-27 - (casting ? 12 : 0), -38);
+    context.lineTo(-27 - (casting ? 12 : 0) - (meleeStrike ? 17 : 0), -38);
     context.moveTo(15, -55);
     context.lineTo(29, -39);
     context.stroke();
@@ -2061,9 +2217,15 @@ class RooftopGame {
     context.strokeStyle = "#6be386";
     context.lineWidth = 3;
     context.beginPath();
-    context.moveTo(29, -39);
-    context.lineTo(34, -3);
-    context.arc(29, -1, 7, 0, Math.PI * 1.45);
+    if (meleePose) {
+      context.moveTo(-29, -39);
+      context.lineTo(-67 - (meleeStrike ? 16 : 0), -32);
+      context.arc(-70 - (meleeStrike ? 16 : 0), -38, 7, 0.2, Math.PI * 1.55);
+    } else {
+      context.moveTo(29, -39);
+      context.lineTo(34, -3);
+      context.arc(29, -1, 7, 0, Math.PI * 1.45);
+    }
     context.stroke();
     context.restore();
   }
@@ -2072,7 +2234,9 @@ class RooftopGame {
     const context = this.context;
     const penguin = this.joker;
     const runCycle = Math.sin(this.elapsed * 12) * (penguin.state === "entering" ? 4 : 1.3);
-    const attacking = penguin.attackLabelTimer > 0;
+    const meleePose = penguin.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(penguin.attackMode);
+    const attacking = penguin.attackLabelTimer > 0 || meleePose;
 
     context.save();
     context.translate(penguin.x, penguin.feet);
@@ -2129,13 +2293,24 @@ class RooftopGame {
     context.strokeStyle = "#8da9bb";
     context.lineWidth = 3;
     context.beginPath();
-    context.moveTo(22, -48);
-    context.lineTo(34 + (attacking ? 11 : 0), -4);
+    if (meleePose) {
+      context.moveTo(-17, -48);
+      context.lineTo(-63 - (meleeStrike ? 20 : 0), -40);
+    } else {
+      context.moveTo(22, -48);
+      context.lineTo(34 + (attacking ? 11 : 0), -4);
+    }
     context.stroke();
     context.fillStyle = "#263b53";
     context.beginPath();
-    context.arc(22, -49, 21, Math.PI, 0);
-    context.lineTo(22, -45);
+    if (meleePose) {
+      const umbrellaX = -58 - (meleeStrike ? 20 : 0);
+      context.arc(umbrellaX, -40, 20, Math.PI, 0);
+      context.lineTo(umbrellaX, -36);
+    } else {
+      context.arc(22, -49, 21, Math.PI, 0);
+      context.lineTo(22, -45);
+    }
     context.closePath();
     context.fill();
     context.strokeStyle = "#9bdcff";
@@ -2160,7 +2335,9 @@ class RooftopGame {
     const context = this.context;
     const joker = this.joker;
     const runCycle = Math.sin(this.elapsed * 12) * (joker.state === "entering" ? 5 : 2);
-    const attackPose = joker.state !== "defeated" && joker.attackLabelTimer > 0 ? 1 : 0;
+    const meleePose = joker.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(joker.attackMode);
+    const attackPose = joker.state !== "defeated" && (joker.attackLabelTimer > 0 || meleePose) ? 1 : 0;
 
     context.save();
     context.translate(joker.x, joker.feet);
@@ -2213,10 +2390,24 @@ class RooftopGame {
     context.lineWidth = 9;
     context.beginPath();
     context.moveTo(-16, -51);
-    context.lineTo(-31 - attackPose * 9, -34 - attackPose * 8);
+    context.lineTo(-31 - attackPose * 9 - (meleeStrike ? 18 : 0), -34 - attackPose * 8);
     context.moveTo(15, -51);
     context.lineTo(27, -37);
     context.stroke();
+
+    if (meleePose) {
+      const crowbarReach = meleeStrike ? 22 : 0;
+      context.strokeStyle = "#a7b3b9";
+      context.shadowColor = "#d8f4f2";
+      context.shadowBlur = 5;
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-38 - crowbarReach, -43);
+      context.lineTo(-76 - crowbarReach, -31);
+      context.quadraticCurveTo(-84 - crowbarReach, -29, -82 - crowbarReach, -20);
+      context.stroke();
+      context.shadowBlur = 0;
+    }
 
     context.fillStyle = "#e5eee4";
     context.beginPath();
@@ -2279,6 +2470,7 @@ class RooftopGame {
     const joker = this.joker;
     const profile = VILLAIN_PROFILES[joker.kind];
     const healthRatio = this.clamp(joker.health / joker.maxHealth, 0, 1);
+    const enraged = healthRatio <= 0.5 && joker.state !== "defeated";
 
     context.save();
     context.fillStyle = "rgba(3,10,21,.84)";
@@ -2301,12 +2493,18 @@ class RooftopGame {
       : (healthRatio > 0.28 ? "#e6c35d" : "#ff4d70");
     context.fillRect(344, 106, 272 * healthRatio, 8);
 
-    if (joker.attackLabelTimer > 0 && joker.state !== "defeated") {
-      context.globalAlpha = this.clamp(joker.attackLabelTimer / 0.2, 0, 1);
-      context.fillStyle = profile.color;
+    if ((joker.attackLabelTimer > 0 || enraged) && joker.state !== "defeated") {
+      context.globalAlpha = joker.attackLabelTimer > 0
+        ? this.clamp(joker.attackLabelTimer / 0.2, 0, 1)
+        : 0.62 + Math.sin(this.elapsed * 7) * 0.2;
+      context.fillStyle = enraged ? "#ff667d" : profile.color;
       context.font = "700 10px 'Courier New', monospace";
       context.textAlign = "center";
-      context.fillText(`// ${joker.attackLabel}`, 480, 129);
+      context.fillText(
+        joker.attackLabelTimer > 0 ? `// ${joker.attackLabel}` : "// ENRAGED",
+        480,
+        129,
+      );
       context.globalAlpha = 1;
     }
 
@@ -2331,6 +2529,36 @@ class RooftopGame {
     context.restore();
   }
 
+  drawDamageFeedback() {
+    if (this.damageFlash <= 0 && this.damageBannerTime <= 0) return;
+    const context = this.context;
+    context.save();
+    if (this.damageFlash > 0) {
+      context.fillStyle = `rgba(255, 45, 78, ${this.clamp(this.damageFlash * 0.42, 0, 0.14)})`;
+      context.fillRect(0, 0, 960, 540);
+      context.strokeStyle = `rgba(255, 74, 99, ${this.clamp(this.damageFlash * 2.3, 0, 0.72)})`;
+      context.lineWidth = 9;
+      context.strokeRect(5, 5, 950, 530);
+    }
+    if (this.damageBannerTime > 0 && this.playerHearts > 0) {
+      context.globalAlpha = this.clamp(this.damageBannerTime / 0.2, 0, 1);
+      context.fillStyle = "rgba(24, 5, 16, .86)";
+      context.strokeStyle = "#ff5870";
+      context.lineWidth = 1;
+      context.fillRect(340, 187, 280, 36);
+      context.strokeRect(340.5, 187.5, 279, 35);
+      context.fillStyle = "#ffe9ed";
+      context.font = "700 12px 'Courier New', monospace";
+      context.textAlign = "center";
+      context.fillText(
+        `ARMOR HIT  •  ${this.playerHearts} ${this.playerHearts === 1 ? "HEART" : "HEARTS"} LEFT`,
+        480,
+        210,
+      );
+    }
+    context.restore();
+  }
+
   drawParticles() {
     const context = this.context;
     this.particles.forEach((particle) => {
@@ -2350,6 +2578,11 @@ class RooftopGame {
       : 0;
 
     context.save();
+    if (
+      this.phase === "playing" &&
+      this.meleeInvulnerability > 0 &&
+      Math.sin(this.elapsed * 42) > -0.1
+    ) context.globalAlpha = 0.38;
     context.translate(x + duckAmount * 7, feet);
     context.scale(1 + duckAmount * 0.1, 1 - duckAmount * 0.39);
 
@@ -2504,6 +2737,7 @@ class RooftopGame {
     context.fillStyle = bottomShade;
     context.fillRect(0, 440, 960, 100);
     this.drawBossHud();
+    this.drawDamageFeedback();
   }
 
   frame(now) {

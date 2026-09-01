@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Niyant Rooftop Run</title>
   <meta name="description" content="Unlock a rooftop pursuit hidden inside Niyant's GitHub profile.">
-  <link rel="stylesheet" href="style.css?v=20260901b">
+  <link rel="stylesheet" href="style.css?v=20260901c">
   <script>
     (() => {
       const coordinates = location.search.slice(1).match(/^(\d+),(\d+)$/);
@@ -53,7 +53,10 @@
     <canvas class="runner-canvas" id="canvas" width="960" height="540" aria-label="Batman rooftop runner game"></canvas>
 
     <header class="hud" aria-label="Game status">
-      <button class="return-button" id="returnButton" type="button" aria-label="Return to GitHub profile">← PROFILE</button>
+      <div class="player-status">
+        <button class="return-button" id="returnButton" type="button" aria-label="Return to GitHub profile">← PROFILE</button>
+        <div class="hearts" id="hearts" role="status" aria-label="Batman armor: 3 hearts">♥ ♥ ♥</div>
+      </div>
       <div class="run-title">
         <span>ROOFTOP RUN</span>
         <small id="phaseLabel">SWINGING IN</small>
@@ -101,6 +104,6 @@
     </div>
   </main>
 
-  <script src="game.js?v=20260901-villains"></script>
+  <script src="game.js?v=20260901-boss-armor"></script>
 </body>
 </html>

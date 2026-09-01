@@ -300,6 +300,41 @@ input { font: inherit; }
   text-shadow: 0 2px 16px #000;
 }
 
+.player-status {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+
+.hearts {
+  min-width: 126px;
+  padding: 7px 11px 8px;
+  border: 1px solid rgba(255, 88, 112, .38);
+  border-radius: 2px;
+  background: rgba(18, 7, 18, .72);
+  color: #ff5870;
+  font: 700 24px/1 "Courier New", monospace;
+  letter-spacing: .08em;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(255, 73, 104, .82);
+  backdrop-filter: blur(8px);
+}
+
+.hearts::before {
+  content: "ARMOR";
+  margin-right: 9px;
+  color: #b98892;
+  font-size: 8px;
+  letter-spacing: .18em;
+  vertical-align: 3px;
+  text-shadow: none;
+}
+
+.hearts.critical {
+  border-color: rgba(255, 76, 101, .8);
+  animation: armor-critical .5s ease-in-out infinite alternate;
+}
+
 .return-button {
   justify-self: start;
   height: 44px;
@@ -614,6 +649,7 @@ input { font: inherit; }
 @keyframes helper { 0%, 65% { opacity: 1; } 100% { opacity: .25; } }
 @keyframes tutorial-in { from { opacity: 0; transform: translate(-50%, 8px) scale(.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
 @keyframes gameover { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes armor-critical { to { color: #fff0f2; box-shadow: 0 0 24px rgba(255, 57, 88, .28); } }
 
 @media (hover: none), (pointer: coarse) {
   .runner.playing .touch-controls { display: grid; }
@@ -629,6 +665,9 @@ input { font: inherit; }
   .gate button { width: 100%; }
   .hud { inset: 14px 14px auto; }
   .return-button { height: 38px; padding: 0 10px; font-size: 9px; }
+  .player-status { gap: 6px; }
+  .hearts { min-width: 104px; padding: 6px 8px; font-size: 19px; }
+  .hearts::before { margin-right: 5px; font-size: 7px; }
   .run-title span { font-size: 20px; }
   .run-title small, .high-score small { font-size: 9px; }
   .high-score strong { font-size: 28px; }
