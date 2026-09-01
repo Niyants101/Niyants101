@@ -788,6 +788,23 @@ class RooftopGame {
     return arena;
   }
 
+  releaseBossArena() {
+    const arena = this.platforms.find((platform) => (
+      this.player.x >= platform.x && this.player.x <= platform.x + platform.width
+    ));
+    this.bossArenaActive = false;
+
+    if (arena) {
+      const runwayEnd = this.player.x + 560;
+      arena.width = Math.max(260, runwayEnd - arena.x);
+      this.platforms = this.platforms
+        .filter((platform) => platform === arena || platform.x + platform.width < arena.x)
+        .sort((first, second) => first.x - second.x);
+    }
+
+    this.fillWorld();
+  }
+
   spawnVillain() {
     const arena = this.prepareBossArena();
     const kind = this.nextVillain();
@@ -2012,8 +2029,7 @@ class RooftopGame {
       if (this.joker.defeatTimer <= 0 || this.joker.feet > 620) {
         this.joker = null;
         this.bombs = [];
-        this.bossArenaActive = false;
-        this.fillWorld();
+        this.releaseBossArena();
         this.phaseNode.textContent = "IN PURSUIT";
         this.updateHearts();
       }
