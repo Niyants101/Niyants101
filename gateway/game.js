@@ -19,6 +19,7 @@ const VILLAIN_PROFILES = Object.freeze({
     meleeWindup: 0.72,
     meleeSpeed: 470,
     meleeReach: 18,
+    baseTarget: 720,
   },
   bane: {
     name: "BANE",
@@ -31,6 +32,7 @@ const VILLAIN_PROFILES = Object.freeze({
     meleeWindup: 0.78,
     meleeSpeed: 570,
     meleeReach: 10,
+    baseTarget: 750,
   },
   riddler: {
     name: "RIDDLER",
@@ -43,6 +45,7 @@ const VILLAIN_PROFILES = Object.freeze({
     meleeWindup: 0.86,
     meleeSpeed: 430,
     meleeReach: 20,
+    baseTarget: 720,
   },
   penguin: {
     name: "PENGUIN",
@@ -55,6 +58,59 @@ const VILLAIN_PROFILES = Object.freeze({
     meleeWindup: 0.8,
     meleeSpeed: 445,
     meleeReach: 22,
+    baseTarget: 700,
+  },
+  ivy: {
+    name: "POISON IVY",
+    health: 12,
+    color: "#66d66f",
+    hitColor: "#ff8ab1",
+    minDelay: 1.65,
+    maxDelay: 2.35,
+    meleeLabel: "THORN LASH  •  MOVE LEFT",
+    meleeWindup: 0.82,
+    meleeSpeed: 450,
+    meleeReach: 24,
+    baseTarget: 715,
+  },
+  twoface: {
+    name: "TWO-FACE",
+    health: 13,
+    color: "#e09a55",
+    hitColor: "#bfe8ff",
+    minDelay: 1.55,
+    maxDelay: 2.25,
+    meleeLabel: "COIN-FLIP RUSH  •  MOVE LEFT",
+    meleeWindup: 0.76,
+    meleeSpeed: 485,
+    meleeReach: 18,
+    baseTarget: 725,
+  },
+  scarecrow: {
+    name: "SCARECROW",
+    health: 12,
+    color: "#c99b55",
+    hitColor: "#e7ff86",
+    minDelay: 1.6,
+    maxDelay: 2.3,
+    meleeLabel: "SCYTHE LUNGE  •  MOVE LEFT",
+    meleeWindup: 0.86,
+    meleeSpeed: 455,
+    meleeReach: 23,
+    baseTarget: 710,
+  },
+  freeze: {
+    name: "MR. FREEZE",
+    health: 15,
+    color: "#76d9ff",
+    hitColor: "#e7fbff",
+    minDelay: 1.8,
+    maxDelay: 2.5,
+    meleeLabel: "CRYO HAMMER  •  MOVE LEFT",
+    meleeWindup: 0.9,
+    meleeSpeed: 415,
+    meleeReach: 14,
+    baseTarget: 750,
   },
 });
 
@@ -290,10 +346,12 @@ class RooftopGame {
     this.damageFlash = 0;
     this.damageBannerTime = 0;
     this.joker = null;
-    this.nextJokerDistance = 500;
+    this.nextJokerDistance = Number.POSITIVE_INFINITY;
+    this.nextBossTime = Number.POSITIVE_INFINITY;
     this.jokerEncounters = 0;
     this.lastVillain = null;
     this.villainQueue = this.shuffleVillains(Object.keys(VILLAIN_PROFILES));
+    this.scheduleNextBossEncounter(true);
     this.bossBannerTime = 0;
     this.throwCooldown = 0;
     this.throwAnimation = 0;
@@ -687,6 +745,19 @@ class RooftopGame {
     return villain;
   }
 
+  scheduleNextBossEncounter(firstEncounter = false) {
+    const minimumDelay = firstEncounter ? 10 : 18;
+    const maximumDelay = firstEncounter ? 23 : 38;
+    const minimumDistance = firstEncounter ? 320 : 560;
+    const maximumDistance = firstEncounter ? 720 : 1180;
+    this.nextBossTime = this.elapsed + minimumDelay + this.combatRandom() * (
+      maximumDelay - minimumDelay
+    );
+    this.nextJokerDistance = this.distance + minimumDistance + this.combatRandom() * (
+      maximumDistance - minimumDistance
+    );
+  }
+
   prepareBossArena() {
     const arena = this.platforms.find((platform) => (
       this.player.x >= platform.x && this.player.x <= platform.x + platform.width
@@ -710,12 +781,13 @@ class RooftopGame {
     const kind = this.nextVillain();
     const profile = VILLAIN_PROFILES[kind];
     const maxHealth = profile.health + Math.min(Math.floor(this.jokerEncounters / 2), 6);
-    const baseTarget = kind === "bane" ? 750 : (kind === "penguin" ? 700 : 720);
+    const baseTarget = profile.baseTarget;
     const targetX = baseTarget + (this.combatRandom() - 0.5) * 54;
     const entryStyle = this.combatRandom() < 0.45 ? "drop" : "dash";
     const arenaY = arena?.y ?? 410;
     this.jokerEncounters += 1;
-    this.nextJokerDistance += 500;
+    this.nextBossTime = Number.POSITIVE_INFINITY;
+    this.nextJokerDistance = Number.POSITIVE_INFINITY;
     this.batarangs = [];
     this.bombs = [];
     this.playerHearts = this.maxPlayerHearts;
@@ -931,6 +1003,172 @@ class RooftopGame {
     });
   }
 
+  spawnIvyVine() {
+    this.bombs.push({
+      kind: "ivy-vine",
+      x: this.joker.x - 44,
+      y: this.joker.feet,
+      width: 78,
+      height: 30,
+      telegraph: 0.82,
+      active: false,
+      life: 2.7,
+      exploded: false,
+      harmless: false,
+      effectColor: "#65da70",
+    });
+  }
+
+  spawnIvySpore() {
+    const targetX = this.clamp(
+      this.player.x + (this.combatRandom() - 0.5) * 150,
+      125,
+      380,
+    );
+    const surface = this.getSurface(targetX);
+    this.bombs.push({
+      kind: "ivy-spore",
+      x: targetX,
+      y: 68,
+      targetY: (surface?.y ?? this.joker.feet) - 18,
+      radius: 18,
+      telegraph: 0.92,
+      active: false,
+      landed: false,
+      velocityY: 0,
+      cloudTime: 1.55,
+      life: 3.2,
+      rotation: 0,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#e76f9d",
+    });
+  }
+
+  spawnTwoFaceBurst() {
+    const low = this.combatRandom() > 0.5;
+    for (let shot = 0; shot < 3; shot += 1) {
+      this.bombs.push({
+        kind: "twoface-bullet",
+        x: this.joker.x - 30,
+        y: this.joker.feet - (low ? 25 : 67),
+        yOffset: low ? 25 : 67,
+        velocityX: -515,
+        radius: 7,
+        delay: 0.3 + shot * 0.17,
+        life: 2.5,
+        rotation: shot * Math.PI,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: shot % 2 ? "#86c9ff" : "#ff9b55",
+      });
+    }
+    return low;
+  }
+
+  throwTwoFaceCoin() {
+    this.bombs.push({
+      kind: "twoface-coin",
+      x: this.joker.x - 25,
+      y: this.joker.feet - 58,
+      velocityX: -285,
+      velocityY: -315,
+      radius: 14,
+      rotation: 0,
+      landed: false,
+      fuse: 2.1,
+      life: 3.4,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#f0a74f",
+    });
+  }
+
+  spawnScarecrowCrows() {
+    const low = this.combatRandom() > 0.5;
+    for (let crow = 0; crow < 5; crow += 1) {
+      this.bombs.push({
+        kind: "scarecrow-crow",
+        x: this.joker.x - 35,
+        y: this.joker.feet - (low ? 28 : 70),
+        yOffset: low ? 28 : 70,
+        velocityX: -365 - crow * 7,
+        radius: 12,
+        delay: 0.26 + crow * 0.11,
+        life: 3,
+        rotation: crow * 0.9,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#c99b55",
+      });
+    }
+    return low;
+  }
+
+  throwScarecrowGas() {
+    this.bombs.push({
+      kind: "scarecrow-gas",
+      x: this.joker.x - 28,
+      y: this.joker.feet - 62,
+      velocityX: -235,
+      velocityY: -270,
+      radius: 11,
+      rotation: 0,
+      landed: false,
+      active: false,
+      fuse: 0.68,
+      life: 3.3,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#c7c85e",
+    });
+  }
+
+  spawnFreezeRay() {
+    this.bombs.push({
+      kind: "freeze-ray",
+      x: 0,
+      y: this.joker.feet - 24,
+      yOffset: 24,
+      width: Math.max(0, this.joker.x - 40),
+      height: 13,
+      telegraph: 1.02,
+      active: false,
+      activeTime: 0.56,
+      life: 1.7,
+      exploded: false,
+      harmless: false,
+      effectColor: "#76d9ff",
+    });
+  }
+
+  spawnFreezeSpikes() {
+    const center = this.clamp(this.player.x + 28, 155, 335);
+    [-42, 0, 42].forEach((offset, index) => {
+      const x = center + offset;
+      const surface = this.getSurface(x);
+      this.bombs.push({
+        kind: "freeze-spike",
+        x,
+        y: surface?.y ?? this.joker.feet,
+        width: 32,
+        height: 58,
+        telegraph: 0.82 + index * 0.08,
+        active: false,
+        activeTime: 0.62,
+        life: 1.75,
+        exploded: false,
+        harmless: false,
+        effectColor: "#8ee9ff",
+      });
+    });
+  }
+
   scheduleVillainAttack() {
     if (!this.joker) return;
     const profile = VILLAIN_PROFILES[this.joker.kind];
@@ -990,20 +1228,64 @@ class RooftopGame {
         this.joker.attackLabel = VILLAIN_PROFILES.riddler.meleeLabel;
         this.startVillainMelee();
       }
+    } else if (this.joker.kind === "penguin") {
+      if (attack === 0) {
+        this.joker.attackLabel = "UMBRELLA MISSILES";
+        this.spawnPenguinMissiles();
+      } else if (attack === 1) {
+        this.joker.attackLabel = "PENGUIN BOT";
+        this.spawnPenguinBot();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.penguin.meleeLabel;
+        this.startVillainMelee();
+      }
+    } else if (this.joker.kind === "ivy") {
+      if (attack === 0) {
+        this.joker.attackLabel = "VINE SURGE  •  JUMP";
+        this.spawnIvyVine();
+      } else if (attack === 1) {
+        this.joker.attackLabel = "SPORE DROP  •  MOVE";
+        this.spawnIvySpore();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.ivy.meleeLabel;
+        this.startVillainMelee();
+      }
+    } else if (this.joker.kind === "twoface") {
+      if (attack === 0) {
+        const low = this.spawnTwoFaceBurst();
+        this.joker.attackLabel = low ? "LOW BURST  •  JUMP" : "HIGH BURST  •  DUCK";
+      } else if (attack === 1) {
+        this.joker.attackLabel = "EXPLOSIVE COIN  •  JUMP";
+        this.throwTwoFaceCoin();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.twoface.meleeLabel;
+        this.startVillainMelee();
+      }
+    } else if (this.joker.kind === "scarecrow") {
+      if (attack === 0) {
+        const low = this.spawnScarecrowCrows();
+        this.joker.attackLabel = low ? "LOW CROWS  •  JUMP" : "HIGH CROWS  •  DUCK";
+      } else if (attack === 1) {
+        this.joker.attackLabel = "FEAR TOXIN  •  JUMP";
+        this.throwScarecrowGas();
+      } else {
+        this.joker.attackLabel = VILLAIN_PROFILES.scarecrow.meleeLabel;
+        this.startVillainMelee();
+      }
     } else if (attack === 0) {
-      this.joker.attackLabel = "UMBRELLA MISSILES";
-      this.spawnPenguinMissiles();
+      this.joker.attackLabel = "FREEZE RAY  •  JUMP";
+      this.spawnFreezeRay();
     } else if (attack === 1) {
-      this.joker.attackLabel = "PENGUIN BOT";
-      this.spawnPenguinBot();
+      this.joker.attackLabel = "ICE SPIKES  •  MOVE / JUMP";
+      this.spawnFreezeSpikes();
     } else {
-      this.joker.attackLabel = VILLAIN_PROFILES.penguin.meleeLabel;
+      this.joker.attackLabel = VILLAIN_PROFILES.freeze.meleeLabel;
       this.startVillainMelee();
     }
 
     this.joker.attackLabelTimer = this.joker.attackMode === "melee-windup"
       ? VILLAIN_PROFILES[this.joker.kind].meleeWindup + 0.58
-      : 1.05;
+      : 1.18;
     this.scheduleVillainAttack();
   }
 
@@ -1035,6 +1317,7 @@ class RooftopGame {
       bomb.harmless = true;
       this.explodeBomb(bomb, true);
     });
+    this.scheduleNextBossEncounter(false);
   }
 
   hitJoker() {
@@ -1062,7 +1345,7 @@ class RooftopGame {
         this.joker.state !== "defeated" &&
         batarang.x >= this.joker.x - 28 &&
         batarang.x <= this.joker.x + 30 &&
-        batarang.y >= this.joker.feet - 88 &&
+        batarang.y >= this.joker.feet - 112 &&
         batarang.y <= this.joker.feet - 10
       ) {
         this.hitJoker();
@@ -1072,7 +1355,18 @@ class RooftopGame {
 
       const bomb = this.bombs.find((item) => (
         !item.exploded &&
-        ["joker-bomb", "joker-gas", "riddler-orb", "penguin-missile", "penguin-bot"].includes(item.kind) &&
+        [
+          "joker-bomb",
+          "joker-gas",
+          "riddler-orb",
+          "penguin-missile",
+          "penguin-bot",
+          "ivy-spore",
+          "twoface-bullet",
+          "twoface-coin",
+          "scarecrow-crow",
+          "scarecrow-gas",
+        ].includes(item.kind) &&
         Math.hypot(batarang.x - item.x, batarang.y - item.y) < item.radius + 12
       ));
       if (bomb) {
@@ -1211,6 +1505,175 @@ class RooftopGame {
         hazard.fuse -= delta;
         hazard.life -= delta;
         if (hazard.fuse <= 0) this.explodeBomb(hazard);
+        return;
+      }
+
+      if (hazard.kind === "ivy-vine") {
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (this.joker?.kind === "ivy") {
+            hazard.x = this.joker.x - 44;
+            hazard.y = this.joker.feet;
+          }
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.x -= (speed + 255) * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) hazard.y = surface.y;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "ivy-spore") {
+        hazard.rotation += delta * 4;
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else if (!hazard.landed) {
+          hazard.velocityY += 620 * delta;
+          hazard.y += hazard.velocityY * delta;
+          hazard.life -= delta;
+          if (hazard.y >= hazard.targetY) {
+            hazard.y = hazard.targetY;
+            hazard.landed = true;
+            hazard.velocityY = 0;
+          }
+        } else {
+          hazard.cloudTime -= delta;
+          hazard.life -= delta;
+          if (hazard.cloudTime <= 0) this.explodeBomb(hazard, true);
+        }
+        return;
+      }
+
+      if (hazard.kind === "twoface-bullet") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "twoface") {
+            hazard.x = this.joker.x - 30;
+            hazard.y = this.joker.feet - hazard.yOffset;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            hazard.y = surface.y - hazard.yOffset + Math.sin(this.elapsed * 12 + hazard.rotation) * 2;
+          }
+          hazard.rotation += delta * 15;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "twoface-coin") {
+        hazard.rotation += delta * (hazard.landed ? 12 : 18);
+        if (!hazard.landed) {
+          const previousY = hazard.y;
+          hazard.x += hazard.velocityX * delta;
+          hazard.velocityY += 900 * delta;
+          hazard.y += hazard.velocityY * delta;
+          const surface = this.getSurface(hazard.x);
+          if (
+            surface &&
+            hazard.velocityY >= 0 &&
+            previousY + hazard.radius <= surface.y + 4 &&
+            hazard.y + hazard.radius >= surface.y
+          ) {
+            hazard.landed = true;
+            hazard.y = surface.y - hazard.radius;
+            hazard.velocityY = 0;
+          }
+        } else {
+          hazard.x -= (speed + 70) * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) hazard.y = surface.y - hazard.radius;
+          hazard.fuse -= delta;
+          if (hazard.fuse <= 0) this.explodeBomb(hazard);
+        }
+        hazard.life -= delta;
+        return;
+      }
+
+      if (hazard.kind === "scarecrow-crow") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "scarecrow") {
+            hazard.x = this.joker.x - 35;
+            hazard.y = this.joker.feet - hazard.yOffset;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            hazard.y = surface.y - hazard.yOffset + Math.sin(this.elapsed * 14 + hazard.rotation) * 7;
+          }
+          hazard.rotation += delta * 8;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "scarecrow-gas") {
+        hazard.rotation += delta * (hazard.landed ? 3 : 10);
+        if (!hazard.landed) {
+          const previousY = hazard.y;
+          hazard.x += hazard.velocityX * delta;
+          hazard.velocityY += 880 * delta;
+          hazard.y += hazard.velocityY * delta;
+          const surface = this.getSurface(hazard.x);
+          if (
+            surface &&
+            hazard.velocityY >= 0 &&
+            previousY + hazard.radius <= surface.y + 4 &&
+            hazard.y + hazard.radius >= surface.y
+          ) {
+            hazard.landed = true;
+            hazard.y = surface.y - hazard.radius;
+            hazard.velocityY = 0;
+          }
+        } else {
+          hazard.x -= speed * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            const targetY = surface.y - (hazard.active ? 31 : hazard.radius);
+            hazard.y += (targetY - hazard.y) * (1 - Math.exp(-18 * delta));
+          }
+          hazard.fuse -= delta;
+          if (!hazard.active && hazard.fuse <= 0) hazard.active = true;
+          if (hazard.active) {
+            hazard.life -= delta;
+            if (hazard.life <= 0) this.explodeBomb(hazard, true);
+          }
+        }
+        return;
+      }
+
+      if (hazard.kind === "freeze-ray") {
+        if (this.joker?.kind === "freeze") {
+          hazard.width = Math.max(0, this.joker.x - 40);
+          hazard.y = this.joker.feet - hazard.yOffset;
+        }
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.activeTime -= delta;
+          if (hazard.activeTime <= 0) hazard.life = 0;
+        }
+        return;
+      }
+
+      if (hazard.kind === "freeze-spike") {
+        const surface = this.getSurface(hazard.x);
+        if (surface) hazard.y = surface.y;
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.activeTime -= delta;
+          if (hazard.activeTime <= 0) hazard.life = 0;
+        }
       }
     });
     this.bombs = this.bombs.filter((hazard) => (
@@ -1346,6 +1809,7 @@ class RooftopGame {
       !this.tutorialEnabled &&
       this.player.grounded &&
       !this.player.onRamp &&
+      this.elapsed >= this.nextBossTime &&
       this.distance >= this.nextJokerDistance
     ) {
       this.spawnVillain();
@@ -1372,6 +1836,55 @@ class RooftopGame {
     if (hazard.kind === "riddler-laser") {
       return hazard.active && hazard.activeTime > 0
         ? { x: hazard.x, y: hazard.y - hazard.height / 2, width: hazard.width, height: hazard.height }
+        : null;
+    }
+
+    if (hazard.kind === "ivy-vine") {
+      return hazard.active
+        ? {
+          x: hazard.x - hazard.width / 2,
+          y: hazard.y - hazard.height,
+          width: hazard.width,
+          height: hazard.height,
+        }
+        : null;
+    }
+
+    if (hazard.kind === "ivy-spore") {
+      if (!hazard.active) return null;
+      return hazard.landed
+        ? { x: hazard.x - 45, y: hazard.y - 46, width: 90, height: 56 }
+        : {
+          x: hazard.x - hazard.radius,
+          y: hazard.y - hazard.radius,
+          width: hazard.radius * 2,
+          height: hazard.radius * 2,
+        };
+    }
+
+    if (
+      (hazard.kind === "twoface-bullet" || hazard.kind === "scarecrow-crow") &&
+      hazard.delay > 0
+    ) return null;
+
+    if (hazard.kind === "scarecrow-gas" && hazard.active) {
+      return { x: hazard.x - 44, y: hazard.y - 34, width: 88, height: 66 };
+    }
+
+    if (hazard.kind === "freeze-ray") {
+      return hazard.active && hazard.activeTime > 0
+        ? { x: hazard.x, y: hazard.y - hazard.height / 2, width: hazard.width, height: hazard.height }
+        : null;
+    }
+
+    if (hazard.kind === "freeze-spike") {
+      return hazard.active && hazard.activeTime > 0
+        ? {
+          x: hazard.x - hazard.width / 2,
+          y: hazard.y - hazard.height,
+          width: hazard.width,
+          height: hazard.height,
+        }
         : null;
     }
 
@@ -1406,6 +1919,10 @@ class RooftopGame {
       bane: { width: 82, height: 104 },
       riddler: { width: 62, height: 94 },
       penguin: { width: 68, height: 91 },
+      ivy: { width: 64, height: 96 },
+      twoface: { width: 64, height: 96 },
+      scarecrow: { width: 70, height: 106 },
+      freeze: { width: 86, height: 110 },
     };
     const size = sizes[villain.kind];
     return {
@@ -1451,7 +1968,7 @@ class RooftopGame {
       if (bombBox && this.overlaps(playerBox, bombBox)) {
         if (this.takeBossDamage()) {
           bomb.harmless = true;
-          if (bomb.kind === "riddler-laser") {
+          if (bomb.kind === "riddler-laser" || bomb.kind === "freeze-ray") {
             bomb.x = playerBox.x + playerBox.width / 2;
             bomb.width = 0;
           }
@@ -2084,6 +2601,287 @@ class RooftopGame {
         return;
       }
 
+      if (hazard.kind === "ivy-vine") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.shadowColor = "#66e779";
+        context.shadowBlur = hazard.active ? 12 : 5;
+        if (!hazard.active) {
+          const pulse = 30 + Math.sin(this.elapsed * 18) * 7;
+          context.globalAlpha = 0.7;
+          context.strokeStyle = "#8cff91";
+          context.lineWidth = 3;
+          context.beginPath();
+          context.ellipse(0, -3, pulse, 8, 0, 0, Math.PI * 2);
+          context.stroke();
+          context.fillStyle = "#d5ff7d";
+          context.font = "700 10px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("↑ JUMP", 0, -16);
+        } else {
+          context.strokeStyle = "#3fc85a";
+          context.lineWidth = 7;
+          context.lineCap = "round";
+          context.beginPath();
+          context.moveTo(-39, -5);
+          context.bezierCurveTo(-21, -29, -5, 8, 13, -23);
+          context.bezierCurveTo(24, -40, 30, -8, 39, -27);
+          context.stroke();
+          context.fillStyle = "#8be56d";
+          [-28, -9, 10, 29].forEach((x, index) => {
+            context.beginPath();
+            context.ellipse(x, -14 - (index % 2) * 8, 9, 4, index % 2 ? -0.6 : 0.6, 0, Math.PI * 2);
+            context.fill();
+          });
+          context.fillStyle = "#f26c9f";
+          context.beginPath();
+          context.arc(13, -25, 5, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "ivy-spore") {
+        context.save();
+        if (!hazard.active) {
+          const groundY = hazard.targetY + hazard.radius;
+          context.globalAlpha = 0.5 + Math.sin(this.elapsed * 16) * 0.2;
+          context.strokeStyle = "#ff82b0";
+          context.lineWidth = 3;
+          context.setLineDash([7, 5]);
+          context.beginPath();
+          context.moveTo(hazard.x, hazard.y + 17);
+          context.lineTo(hazard.x, groundY - 12);
+          context.stroke();
+          context.setLineDash([]);
+          context.beginPath();
+          context.ellipse(hazard.x, groundY, 38, 10, 0, 0, Math.PI * 2);
+          context.stroke();
+          context.fillStyle = "#ffd0df";
+          context.font = "700 10px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("MOVE", hazard.x, groundY - 16);
+        } else if (hazard.landed) {
+          context.translate(hazard.x, hazard.y);
+          context.globalAlpha = 0.5;
+          context.shadowColor = "#f070a2";
+          context.shadowBlur = 15;
+          for (let puff = 0; puff < 8; puff += 1) {
+            const angle = puff * 1.41 + this.elapsed * 0.45;
+            const px = Math.cos(angle) * (14 + (puff % 3) * 10);
+            const py = Math.sin(angle) * 10 - 12 - (puff % 2) * 8;
+            context.fillStyle = puff % 2 ? "#e75893" : "#9edb64";
+            context.beginPath();
+            context.arc(px, py, 14 + (puff % 3) * 3, 0, Math.PI * 2);
+            context.fill();
+          }
+        } else {
+          context.translate(hazard.x, hazard.y);
+          context.rotate(hazard.rotation);
+          context.shadowColor = "#ff7bac";
+          context.shadowBlur = 13;
+          context.fillStyle = "#e85e99";
+          context.beginPath();
+          context.ellipse(0, 0, 13, 18, 0, 0, Math.PI * 2);
+          context.fill();
+          context.fillStyle = "#ceffd0";
+          for (let dot = 0; dot < 5; dot += 1) {
+            const angle = dot * Math.PI * 0.4;
+            context.beginPath();
+            context.arc(Math.cos(angle) * 7, Math.sin(angle) * 11, 2.5, 0, Math.PI * 2);
+            context.fill();
+          }
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "twoface-bullet") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = hazard.effectColor;
+        context.shadowBlur = 12;
+        context.strokeStyle = hazard.effectColor;
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(3, 0);
+        context.lineTo(29, 0);
+        context.stroke();
+        context.fillStyle = hazard.effectColor;
+        context.beginPath();
+        context.moveTo(-9, -4);
+        context.lineTo(6, -4);
+        context.lineTo(10, 0);
+        context.lineTo(6, 4);
+        context.lineTo(-9, 4);
+        context.closePath();
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "twoface-coin") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.shadowColor = "#ffc75f";
+        context.shadowBlur = 11;
+        context.fillStyle = "#f0a44e";
+        context.beginPath();
+        context.arc(0, 0, hazard.radius, Math.PI / 2, Math.PI * 1.5);
+        context.closePath();
+        context.fill();
+        context.fillStyle = "#8ecdf4";
+        context.beginPath();
+        context.arc(0, 0, hazard.radius, -Math.PI / 2, Math.PI / 2);
+        context.closePath();
+        context.fill();
+        context.strokeStyle = "#fff0b8";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(0, 0, hazard.radius, 0, Math.PI * 2);
+        context.stroke();
+        context.fillStyle = "#172638";
+        context.font = "700 12px 'Courier New', monospace";
+        context.textAlign = "center";
+        context.fillText("2", 0, 4);
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "scarecrow-crow") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.globalAlpha = hazard.delay > 0 ? 0.3 : 1;
+        const flap = Math.sin(this.elapsed * 25 + hazard.rotation) * 9;
+        context.shadowColor = "#e0b65d";
+        context.shadowBlur = 7;
+        context.fillStyle = "#11151a";
+        context.beginPath();
+        context.moveTo(-1, 0);
+        context.quadraticCurveTo(-15, -11 - flap, -25, -2);
+        context.quadraticCurveTo(-11, -1, -3, 7);
+        context.lineTo(3, 7);
+        context.quadraticCurveTo(12, -2, 25, -2 - flap);
+        context.quadraticCurveTo(15, -11, 1, 0);
+        context.closePath();
+        context.fill();
+        context.fillStyle = "#efbd49";
+        context.beginPath();
+        context.moveTo(-3, 0);
+        context.lineTo(-11, 4);
+        context.lineTo(-3, 6);
+        context.closePath();
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "scarecrow-gas") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        if (hazard.active) {
+          context.globalAlpha = 0.42;
+          context.shadowColor = "#d9d75f";
+          context.shadowBlur = 18;
+          for (let puff = 0; puff < 8; puff += 1) {
+            const angle = puff * 1.27 + this.elapsed * 0.6;
+            const x = Math.cos(angle) * (13 + (puff % 3) * 11);
+            const y = Math.sin(angle) * 12 - (puff % 2) * 13;
+            context.fillStyle = puff % 2 ? "#b7b94d" : "#ded269";
+            context.beginPath();
+            context.arc(x, y, 17 + (puff % 3) * 3, 0, Math.PI * 2);
+            context.fill();
+          }
+          context.globalAlpha = 0.75;
+          context.fillStyle = "#171a17";
+          context.beginPath();
+          context.arc(0, -7, 10, 0, Math.PI * 2);
+          context.fill();
+          context.fillStyle = "#d9d75f";
+          context.fillRect(-6, -10, 3, 3);
+          context.fillRect(3, -10, 3, 3);
+        } else {
+          context.rotate(hazard.rotation);
+          context.fillStyle = "#5f5d35";
+          context.fillRect(-8, -13, 16, 26);
+          context.strokeStyle = "#d9d75f";
+          context.lineWidth = 2;
+          context.strokeRect(-8, -13, 16, 26);
+          context.fillStyle = "#23251d";
+          context.fillRect(-4, -17, 8, 5);
+          context.fillStyle = "#e6dc69";
+          context.font = "700 12px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("!", 0, 5);
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "freeze-ray") {
+        context.save();
+        const pulse = 0.42 + Math.sin(this.elapsed * 25) * 0.18;
+        context.globalAlpha = hazard.active ? 0.96 : pulse;
+        context.shadowColor = "#86eaff";
+        context.shadowBlur = hazard.active ? 22 : 8;
+        const beamHeight = hazard.active ? hazard.height : 2;
+        context.fillStyle = hazard.active ? "#b9f4ff" : "#4aa9c9";
+        context.fillRect(hazard.x, hazard.y - beamHeight / 2, hazard.width, beamHeight);
+        if (hazard.active) {
+          context.fillStyle = "rgba(92,207,244,.45)";
+          context.fillRect(hazard.x, hazard.y - 12, hazard.width, 24);
+        }
+        for (let marker = 105; marker < hazard.width; marker += 150) {
+          context.fillStyle = "#e5fbff";
+          context.font = "700 11px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("↑ JUMP", marker, hazard.y - 14);
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "freeze-spike") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.shadowColor = "#80e7ff";
+        context.shadowBlur = hazard.active ? 16 : 5;
+        if (!hazard.active) {
+          context.globalAlpha = 0.48 + Math.sin(this.elapsed * 20) * 0.2;
+          context.strokeStyle = "#9cecff";
+          context.lineWidth = 3;
+          context.beginPath();
+          context.ellipse(0, -3, 22, 7, 0, 0, Math.PI * 2);
+          context.stroke();
+          context.fillStyle = "#e8fcff";
+          context.font = "700 9px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("MOVE", 0, -15);
+        } else {
+          const gradient = context.createLinearGradient(0, -hazard.height, 0, 0);
+          gradient.addColorStop(0, "#e9fdff");
+          gradient.addColorStop(0.45, "#73daf5");
+          gradient.addColorStop(1, "#276d90");
+          context.fillStyle = gradient;
+          context.beginPath();
+          context.moveTo(-16, 0);
+          context.lineTo(-7, -34);
+          context.lineTo(0, -19);
+          context.lineTo(8, -hazard.height);
+          context.lineTo(16, 0);
+          context.closePath();
+          context.fill();
+          context.strokeStyle = "#d9faff";
+          context.lineWidth = 2;
+          context.stroke();
+        }
+        context.restore();
+        return;
+      }
+
       context.save();
       context.translate(hazard.x, hazard.y);
       context.rotate(hazard.rotation);
@@ -2369,6 +3167,448 @@ class RooftopGame {
     context.restore();
   }
 
+  drawPoisonIvy() {
+    const context = this.context;
+    const ivy = this.joker;
+    const runCycle = Math.sin(this.elapsed * 13) * (ivy.state === "entering" ? 5 : 1.5);
+    const meleePose = ivy.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(ivy.attackMode);
+    const casting = ivy.attackLabelTimer > 0 || meleePose;
+
+    context.save();
+    context.translate(ivy.x, ivy.feet);
+    if (ivy.state === "defeated") context.rotate(ivy.rotation);
+    else if (meleeStrike) context.rotate(-0.08);
+    if (ivy.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.28)";
+    context.beginPath();
+    context.ellipse(0, 2, 28, 7, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "#245a38";
+    context.lineWidth = 9;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-7, -18);
+    context.lineTo(-11 - runCycle, -2);
+    context.moveTo(7, -18);
+    context.lineTo(11 + runCycle, -2);
+    context.stroke();
+
+    context.fillStyle = ivy.hitFlash > 0 ? "#effff1" : "#348c4c";
+    context.beginPath();
+    context.moveTo(-20, -59);
+    context.quadraticCurveTo(0, -70, 20, -59);
+    context.lineTo(16, -19);
+    context.lineTo(7, -11);
+    context.lineTo(0, -23);
+    context.lineTo(-8, -11);
+    context.lineTo(-18, -20);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#87d75f";
+    [-12, 0, 12].forEach((x, index) => {
+      context.beginPath();
+      context.ellipse(x, -41 + (index % 2) * 8, 8, 4, x * 0.04, 0, Math.PI * 2);
+      context.fill();
+    });
+
+    context.strokeStyle = ivy.hitFlash > 0 ? "#effff1" : "#56ad63";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-15, -54);
+    context.lineTo(-28 - (meleeStrike ? 17 : 0), -37);
+    context.moveTo(15, -54);
+    context.lineTo(29 + (casting ? 8 : 0), -39);
+    context.stroke();
+    if (meleePose) {
+      const reach = meleeStrike ? 28 : 5;
+      context.strokeStyle = "#5eea75";
+      context.shadowColor = "#5eea75";
+      context.shadowBlur = 10;
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-31 - reach, -40);
+      context.bezierCurveTo(-54 - reach, -64, -77 - reach, -25, -95 - reach, -48);
+      context.stroke();
+      context.fillStyle = "#ff76a5";
+      context.beginPath();
+      context.arc(-95 - reach, -48, 5, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    }
+
+    context.fillStyle = "#e4b091";
+    context.beginPath();
+    context.arc(0, -72, 15, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#a9363c";
+    context.beginPath();
+    context.moveTo(-16, -75);
+    context.quadraticCurveTo(-17, -95, -6, -93);
+    context.lineTo(0, -101);
+    context.lineTo(6, -92);
+    context.quadraticCurveTo(18, -93, 17, -69);
+    context.lineTo(10, -77);
+    context.quadraticCurveTo(0, -88, -10, -77);
+    context.lineTo(-15, -62);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#153321";
+    context.fillRect(-9, -74, 5, 3);
+    context.fillRect(4, -74, 5, 3);
+    context.restore();
+  }
+
+  drawTwoFace() {
+    const context = this.context;
+    const twoface = this.joker;
+    const runCycle = Math.sin(this.elapsed * 12) * (twoface.state === "entering" ? 5 : 1.6);
+    const meleePose = twoface.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(twoface.attackMode);
+    const attacking = twoface.attackLabelTimer > 0 || meleePose;
+
+    context.save();
+    context.translate(twoface.x, twoface.feet);
+    if (twoface.state === "defeated") context.rotate(twoface.rotation);
+    else if (meleeStrike) context.rotate(-0.09);
+    if (twoface.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.3)";
+    context.beginPath();
+    context.ellipse(0, 2, 29, 7, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "#202531";
+    context.lineWidth = 9;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-7, -18);
+    context.lineTo(-11 - runCycle, -2);
+    context.moveTo(7, -18);
+    context.lineTo(11 + runCycle, -2);
+    context.stroke();
+
+    context.fillStyle = twoface.hitFlash > 0 ? "#f5fdff" : "#d78b43";
+    context.beginPath();
+    context.moveTo(-21, -61);
+    context.lineTo(0, -64);
+    context.lineTo(0, -17);
+    context.lineTo(-21, -17);
+    context.closePath();
+    context.fill();
+    context.fillStyle = twoface.hitFlash > 0 ? "#f5fdff" : "#25364b";
+    context.beginPath();
+    context.moveTo(0, -64);
+    context.lineTo(21, -61);
+    context.lineTo(21, -17);
+    context.lineTo(0, -17);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#e7e2cf";
+    context.beginPath();
+    context.moveTo(-7, -59);
+    context.lineTo(0, -49);
+    context.lineTo(7, -59);
+    context.lineTo(4, -22);
+    context.lineTo(-4, -22);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#d3a339";
+    context.fillRect(-2, -50, 4, 24);
+
+    context.strokeStyle = twoface.hitFlash > 0 ? "#f5fdff" : "#b9753c";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-16, -54);
+    context.lineTo(-29 - (meleeStrike ? 16 : 0), -38);
+    context.moveTo(16, -54);
+    context.lineTo(30 + (attacking ? 11 : 0), -38);
+    context.stroke();
+    if (attacking && !meleePose) {
+      context.fillStyle = "#172332";
+      context.fillRect(29, -43, 23, 8);
+      context.fillRect(32, -35, 8, 8);
+      context.fillStyle = "#ffbd61";
+      context.fillRect(51, -41, 6, 4);
+    } else if (meleePose) {
+      const reach = meleeStrike ? 23 : 4;
+      context.shadowColor = "#ffc25d";
+      context.shadowBlur = 10;
+      context.strokeStyle = "#f3b64f";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(-37 - reach, -40, 11, 0, Math.PI * 2);
+      context.stroke();
+      context.shadowBlur = 0;
+    }
+
+    context.fillStyle = "#e0b49b";
+    context.beginPath();
+    context.arc(0, -74, 15, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#965a58";
+    context.beginPath();
+    context.arc(3, -74, 13, -Math.PI / 2, Math.PI / 2);
+    context.lineTo(3, -87);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "#4d2430";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(4, -84);
+    context.lineTo(12, -77);
+    context.moveTo(4, -72);
+    context.lineTo(12, -65);
+    context.stroke();
+    context.fillStyle = "#25242a";
+    context.beginPath();
+    context.moveTo(-15, -78);
+    context.quadraticCurveTo(-8, -94, 3, -88);
+    context.lineTo(1, -82);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#17202a";
+    context.fillRect(-9, -75, 5, 3);
+    context.fillStyle = "#d9f4ff";
+    context.fillRect(5, -75, 5, 3);
+    context.restore();
+  }
+
+  drawScarecrow() {
+    const context = this.context;
+    const scarecrow = this.joker;
+    const runCycle = Math.sin(this.elapsed * 11) * (scarecrow.state === "entering" ? 5 : 1.4);
+    const meleePose = scarecrow.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(scarecrow.attackMode);
+    const casting = scarecrow.attackLabelTimer > 0;
+
+    context.save();
+    context.translate(scarecrow.x, scarecrow.feet);
+    if (scarecrow.state === "defeated") context.rotate(scarecrow.rotation);
+    else if (meleeStrike) context.rotate(-0.12);
+    if (scarecrow.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.3)";
+    context.beginPath();
+    context.ellipse(0, 2, 30, 7, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "#433621";
+    context.lineWidth = 8;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-7, -20);
+    context.lineTo(-12 - runCycle, -2);
+    context.moveTo(7, -20);
+    context.lineTo(12 + runCycle, -2);
+    context.stroke();
+    context.strokeStyle = "#d1ac52";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-14 - runCycle, -8);
+    context.lineTo(-23 - runCycle, -1);
+    context.moveTo(14 + runCycle, -8);
+    context.lineTo(23 + runCycle, -1);
+    context.stroke();
+
+    context.fillStyle = scarecrow.hitFlash > 0 ? "#ffffe9" : "#5c4829";
+    context.beginPath();
+    context.moveTo(-22, -65);
+    context.lineTo(20, -65);
+    context.lineTo(27, -16);
+    context.lineTo(12, -23);
+    context.lineTo(3, -11);
+    context.lineTo(-8, -24);
+    context.lineTo(-25, -16);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "#92723a";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-15, -51);
+    context.lineTo(14, -39);
+    context.moveTo(-9, -30);
+    context.lineTo(17, -53);
+    context.stroke();
+
+    context.strokeStyle = scarecrow.hitFlash > 0 ? "#ffffe9" : "#69512e";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-17, -57);
+    context.lineTo(-33 - (meleeStrike ? 18 : 0), -38);
+    context.moveTo(16, -57);
+    context.lineTo(32 + (casting ? 7 : 0), -40);
+    context.stroke();
+
+    const scytheReach = meleePose ? (meleeStrike ? 34 : 12) : 0;
+    context.strokeStyle = "#9a7b48";
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(-32 - scytheReach, -38);
+    context.lineTo(-63 - scytheReach, -91);
+    context.stroke();
+    context.strokeStyle = "#bfc6c4";
+    context.shadowColor = "#d4e9e4";
+    context.shadowBlur = meleePose ? 9 : 3;
+    context.lineWidth = 5;
+    context.beginPath();
+    context.arc(-78 - scytheReach, -88, 20, Math.PI * 1.12, Math.PI * 1.92);
+    context.stroke();
+    context.shadowBlur = 0;
+
+    context.fillStyle = "#a48550";
+    context.beginPath();
+    context.moveTo(-15, -79);
+    context.quadraticCurveTo(0, -94, 15, -79);
+    context.lineTo(12, -61);
+    context.lineTo(-12, -61);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "#40311f";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-10, -74);
+    context.lineTo(-3, -69);
+    context.moveTo(10, -74);
+    context.lineTo(3, -69);
+    context.moveTo(-7, -62);
+    context.lineTo(7, -62);
+    context.stroke();
+    context.fillStyle = "#e4df64";
+    context.fillRect(-9, -73, 5, 3);
+    context.fillRect(4, -73, 5, 3);
+    context.fillStyle = "#342919";
+    context.beginPath();
+    context.moveTo(-29, -84);
+    context.lineTo(29, -84);
+    context.lineTo(15, -94);
+    context.lineTo(8, -110);
+    context.lineTo(-12, -106);
+    context.lineTo(-18, -92);
+    context.closePath();
+    context.fill();
+    context.restore();
+  }
+
+  drawFreeze() {
+    const context = this.context;
+    const freeze = this.joker;
+    const runCycle = Math.sin(this.elapsed * 10) * (freeze.state === "entering" ? 4 : 1.2);
+    const meleePose = freeze.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(freeze.attackMode);
+    const firing = freeze.attackLabelTimer > 0 || meleePose;
+
+    context.save();
+    context.translate(freeze.x, freeze.feet);
+    if (freeze.state === "defeated") context.rotate(freeze.rotation);
+    else if (meleeStrike) context.rotate(-0.08);
+    if (freeze.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.34)";
+    context.beginPath();
+    context.ellipse(0, 2, 38, 8, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "#243d52";
+    context.lineWidth = 13;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-13, -24);
+    context.lineTo(-18 - runCycle, -2);
+    context.moveTo(13, -24);
+    context.lineTo(18 + runCycle, -2);
+    context.stroke();
+    context.fillStyle = "#75dff7";
+    context.fillRect(-25 - runCycle, -8, 17, 8);
+    context.fillRect(8 + runCycle, -8, 17, 8);
+
+    context.fillStyle = freeze.hitFlash > 0 ? "#edfdff" : "#284a63";
+    context.beginPath();
+    context.moveTo(-30, -75);
+    context.lineTo(30, -75);
+    context.lineTo(27, -20);
+    context.lineTo(-27, -20);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "#66d5f0";
+    context.lineWidth = 3;
+    context.stroke();
+    context.fillStyle = "#79def4";
+    context.fillRect(-18, -61, 36, 9);
+    context.fillStyle = "#182a3b";
+    context.fillRect(-20, -44, 40, 8);
+    context.fillStyle = Math.sin(this.elapsed * 8) > 0 ? "#d7fbff" : "#6dd9f1";
+    context.fillRect(-6, -42, 12, 4);
+
+    context.strokeStyle = freeze.hitFlash > 0 ? "#edfdff" : "#315a74";
+    context.lineWidth = 13;
+    context.beginPath();
+    context.moveTo(-25, -65);
+    context.lineTo(-42 - (meleeStrike ? 18 : 0), -41);
+    context.moveTo(25, -65);
+    context.lineTo(42 + (firing ? 11 : 0), -41);
+    context.stroke();
+    if (meleePose) {
+      const reach = meleeStrike ? 25 : 4;
+      context.strokeStyle = "#8de8fb";
+      context.shadowColor = "#8de8fb";
+      context.shadowBlur = 12;
+      context.lineWidth = 6;
+      context.beginPath();
+      context.moveTo(-45 - reach, -42);
+      context.lineTo(-72 - reach, -55);
+      context.stroke();
+      context.fillStyle = "#bff6ff";
+      context.fillRect(-91 - reach, -68, 25, 25);
+      context.strokeStyle = "#4cb7d4";
+      context.strokeRect(-91 - reach, -68, 25, 25);
+      context.shadowBlur = 0;
+    } else {
+      context.fillStyle = "#203a4e";
+      context.fillRect(40, -48, 28, 14);
+      context.fillStyle = "#9bedff";
+      context.fillRect(64, -45, 13, 8);
+    }
+
+    context.fillStyle = "rgba(158,234,250,.26)";
+    context.strokeStyle = "#9defff";
+    context.lineWidth = 3;
+    context.shadowColor = "#76d9ff";
+    context.shadowBlur = 10;
+    context.beginPath();
+    context.arc(0, -88, 24, Math.PI, 0);
+    context.lineTo(24, -75);
+    context.lineTo(-24, -75);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.shadowBlur = 0;
+    context.fillStyle = "#b5c4c7";
+    context.beginPath();
+    context.arc(0, -86, 14, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#5fa9bb";
+    context.fillRect(-9, -89, 18, 6);
+    context.fillStyle = "#dffbff";
+    context.fillRect(-8, -87, 5, 3);
+    context.fillRect(4, -87, 5, 3);
+    context.restore();
+  }
+
   drawJoker() {
     if (!this.joker) return;
     if (this.joker.kind === "bane") {
@@ -2381,6 +3621,22 @@ class RooftopGame {
     }
     if (this.joker.kind === "penguin") {
       this.drawPenguin();
+      return;
+    }
+    if (this.joker.kind === "ivy") {
+      this.drawPoisonIvy();
+      return;
+    }
+    if (this.joker.kind === "twoface") {
+      this.drawTwoFace();
+      return;
+    }
+    if (this.joker.kind === "scarecrow") {
+      this.drawScarecrow();
+      return;
+    }
+    if (this.joker.kind === "freeze") {
+      this.drawFreeze();
       return;
     }
     const context = this.context;
