@@ -10,105 +10,105 @@ const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v2-complete";
 const VILLAIN_PROFILES = Object.freeze({
   joker: {
     name: "JOKER",
-    health: 10,
+    health: 12,
     color: "#b26ade",
     hitColor: "#75ff8f",
-    minDelay: 1.45,
-    maxDelay: 2.15,
+    minDelay: 1.05,
+    maxDelay: 1.55,
     meleeLabel: "CROWBAR RUSH",
-    meleeWindup: 0.72,
-    meleeSpeed: 470,
+    meleeWindup: 0.48,
+    meleeSpeed: 610,
     meleeReach: 18,
     baseTarget: 720,
   },
   bane: {
     name: "BANE",
-    health: 14,
+    health: 16,
     color: "#e06b50",
     hitColor: "#72f4df",
-    minDelay: 1.65,
-    maxDelay: 2.35,
+    minDelay: 1.15,
+    maxDelay: 1.7,
     meleeLabel: "VENOM CHARGE",
-    meleeWindup: 0.78,
-    meleeSpeed: 570,
+    meleeWindup: 0.52,
+    meleeSpeed: 730,
     meleeReach: 10,
     baseTarget: 750,
   },
   riddler: {
     name: "RIDDLER",
-    health: 11,
+    health: 13,
     color: "#5be07c",
     hitColor: "#d8ff65",
-    minDelay: 1.7,
-    maxDelay: 2.4,
+    minDelay: 1.12,
+    maxDelay: 1.68,
     meleeLabel: "CANE STRIKE",
-    meleeWindup: 0.86,
-    meleeSpeed: 430,
+    meleeWindup: 0.55,
+    meleeSpeed: 570,
     meleeReach: 20,
     baseTarget: 720,
   },
   penguin: {
     name: "PENGUIN",
-    health: 12,
+    health: 14,
     color: "#78a9dc",
     hitColor: "#b9e8ff",
-    minDelay: 1.75,
-    maxDelay: 2.45,
+    minDelay: 1.14,
+    maxDelay: 1.7,
     meleeLabel: "UMBRELLA LUNGE",
-    meleeWindup: 0.8,
-    meleeSpeed: 445,
+    meleeWindup: 0.52,
+    meleeSpeed: 590,
     meleeReach: 22,
     baseTarget: 700,
   },
   ivy: {
     name: "POISON IVY",
-    health: 12,
+    health: 14,
     color: "#66d66f",
     hitColor: "#ff8ab1",
-    minDelay: 1.65,
-    maxDelay: 2.35,
-    meleeLabel: "THORN LASH  •  MOVE LEFT",
-    meleeWindup: 0.82,
-    meleeSpeed: 450,
+    minDelay: 1.1,
+    maxDelay: 1.65,
+    meleeLabel: "THORN LASH",
+    meleeWindup: 0.5,
+    meleeSpeed: 605,
     meleeReach: 24,
     baseTarget: 715,
   },
   twoface: {
     name: "TWO-FACE",
-    health: 13,
+    health: 15,
     color: "#e09a55",
     hitColor: "#bfe8ff",
-    minDelay: 1.55,
-    maxDelay: 2.25,
-    meleeLabel: "COIN-FLIP RUSH  •  MOVE LEFT",
-    meleeWindup: 0.76,
-    meleeSpeed: 485,
+    minDelay: 1,
+    maxDelay: 1.55,
+    meleeLabel: "COIN-FLIP RUSH",
+    meleeWindup: 0.46,
+    meleeSpeed: 650,
     meleeReach: 18,
     baseTarget: 725,
   },
   scarecrow: {
     name: "SCARECROW",
-    health: 12,
+    health: 14,
     color: "#c99b55",
     hitColor: "#e7ff86",
-    minDelay: 1.6,
-    maxDelay: 2.3,
-    meleeLabel: "SCYTHE LUNGE  •  MOVE LEFT",
-    meleeWindup: 0.86,
-    meleeSpeed: 455,
+    minDelay: 1.08,
+    maxDelay: 1.62,
+    meleeLabel: "SCYTHE LUNGE",
+    meleeWindup: 0.54,
+    meleeSpeed: 620,
     meleeReach: 23,
     baseTarget: 710,
   },
   freeze: {
     name: "MR. FREEZE",
-    health: 15,
+    health: 17,
     color: "#76d9ff",
     hitColor: "#e7fbff",
-    minDelay: 1.8,
-    maxDelay: 2.5,
-    meleeLabel: "CRYO HAMMER  •  MOVE LEFT",
-    meleeWindup: 0.9,
-    meleeSpeed: 415,
+    minDelay: 1.18,
+    maxDelay: 1.75,
+    meleeLabel: "CRYO HAMMER",
+    meleeWindup: 0.58,
+    meleeSpeed: 560,
     meleeReach: 14,
     baseTarget: 750,
   },
@@ -867,12 +867,12 @@ class RooftopGame {
       kind: "joker-bomb",
       x: this.joker.x - 23,
       y: this.joker.feet - 55,
-      velocityX: -245 - variation * 70,
-      velocityY: -285 - variation * 70,
+      velocityX: -285 - variation * 85,
+      velocityY: -315 - variation * 75,
       radius: 12,
       rotation: 0,
       landed: false,
-      fuse: 2.25,
+      fuse: 1.75,
       exploded: false,
       explosionTime: 0,
       harmless: false,
@@ -887,13 +887,13 @@ class RooftopGame {
       kind: "joker-gas",
       x: this.joker.x - 24,
       y: this.joker.feet - 55,
-      velocityX: -215 - variation * 50,
-      velocityY: -245 - variation * 45,
+      velocityX: -255 - variation * 65,
+      velocityY: -275 - variation * 55,
       radius: 10,
       rotation: 0,
       landed: false,
       active: false,
-      fuse: 0.62,
+      fuse: 0.46,
       life: 3.1,
       exploded: false,
       explosionTime: 0,
@@ -909,7 +909,7 @@ class RooftopGame {
       y: this.joker.feet,
       width: 62,
       height: 28,
-      telegraph: 0.68,
+      telegraph: 0.45,
       active: false,
       life: 2.4,
       exploded: false,
@@ -944,9 +944,9 @@ class RooftopGame {
         x: this.joker.x - 28,
         y: this.joker.feet - (high ? 72 : 25),
         yOffset: high ? 72 : 25,
-        velocityX: -325,
+        velocityX: -390,
         radius: 14,
-        delay: index * 0.62,
+        delay: index * 0.4,
         life: 3.2,
         rotation: index * Math.PI,
         exploded: false,
@@ -965,9 +965,9 @@ class RooftopGame {
       yOffset: 21,
       width: Math.max(0, this.joker.x - 35),
       height: 11,
-      telegraph: 0.95,
+      telegraph: 0.62,
       active: false,
-      activeTime: 0.48,
+      activeTime: 0.52,
       life: 1.38,
       exploded: false,
       harmless: false,
@@ -983,9 +983,9 @@ class RooftopGame {
         x: this.joker.x - 24,
         y: this.joker.feet - 77,
         targetOffset: high ? 69 : 27,
-        velocityX: -345,
+        velocityX: -405,
         radius: 12,
-        delay: 0.42 + index * 0.52,
+        delay: 0.28 + index * 0.4,
         life: 3,
         rotation: 0,
         exploded: false,
@@ -1005,7 +1005,7 @@ class RooftopGame {
       height: 34,
       radius: 18,
       life: 3.8,
-      fuse: 3.25,
+      fuse: 2.7,
       rotation: 0,
       exploded: false,
       explosionTime: 0,
@@ -1021,7 +1021,7 @@ class RooftopGame {
       y: this.joker.feet,
       width: 78,
       height: 30,
-      telegraph: 0.82,
+      telegraph: 0.56,
       active: false,
       life: 2.7,
       exploded: false,
@@ -1043,7 +1043,7 @@ class RooftopGame {
       y: 68,
       targetY: (surface?.y ?? this.joker.feet) - 18,
       radius: 18,
-      telegraph: 0.92,
+      telegraph: 0.62,
       active: false,
       landed: false,
       velocityY: 0,
@@ -1065,9 +1065,9 @@ class RooftopGame {
         x: this.joker.x - 30,
         y: this.joker.feet - (low ? 25 : 67),
         yOffset: low ? 25 : 67,
-        velocityX: -515,
+        velocityX: -585,
         radius: 7,
-        delay: 0.3 + shot * 0.17,
+        delay: 0.18 + shot * 0.14,
         life: 2.5,
         rotation: shot * Math.PI,
         exploded: false,
@@ -1084,8 +1084,8 @@ class RooftopGame {
       kind: "twoface-coin",
       x: this.joker.x - 25,
       y: this.joker.feet - 58,
-      velocityX: -285,
-      velocityY: -315,
+      velocityX: -330,
+      velocityY: -345,
       radius: 14,
       rotation: 0,
       landed: false,
@@ -1106,9 +1106,9 @@ class RooftopGame {
         x: this.joker.x - 35,
         y: this.joker.feet - (low ? 28 : 70),
         yOffset: low ? 28 : 70,
-        velocityX: -365 - crow * 7,
+        velocityX: -420 - crow * 8,
         radius: 12,
-        delay: 0.26 + crow * 0.11,
+        delay: 0.18 + crow * 0.09,
         life: 3,
         rotation: crow * 0.9,
         exploded: false,
@@ -1125,13 +1125,13 @@ class RooftopGame {
       kind: "scarecrow-gas",
       x: this.joker.x - 28,
       y: this.joker.feet - 62,
-      velocityX: -235,
-      velocityY: -270,
+      velocityX: -275,
+      velocityY: -305,
       radius: 11,
       rotation: 0,
       landed: false,
       active: false,
-      fuse: 0.68,
+      fuse: 0.48,
       life: 3.3,
       exploded: false,
       explosionTime: 0,
@@ -1148,7 +1148,7 @@ class RooftopGame {
       yOffset: 24,
       width: Math.max(0, this.joker.x - 40),
       height: 13,
-      telegraph: 1.02,
+      telegraph: 0.66,
       active: false,
       activeTime: 0.56,
       life: 1.7,
@@ -1169,7 +1169,7 @@ class RooftopGame {
         y: surface?.y ?? this.joker.feet,
         width: 32,
         height: 58,
-        telegraph: 0.82 + index * 0.08,
+        telegraph: 0.58 + index * 0.07,
         active: false,
         activeTime: 0.62,
         life: 1.75,
@@ -1180,21 +1180,204 @@ class RooftopGame {
     });
   }
 
+  spawnJokerCards() {
+    const low = this.combatRandom() > 0.5;
+    for (let card = 0; card < 4; card += 1) {
+      this.bombs.push({
+        kind: "joker-card",
+        x: this.joker.x - 30,
+        y: this.joker.feet - (low ? 26 : 67),
+        yOffset: low ? 26 : 67,
+        velocityX: -520 - card * 9,
+        radius: 9,
+        delay: 0.12 + card * 0.11,
+        life: 2.6,
+        rotation: card * 0.7,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: card % 2 ? "#77ef7d" : "#bd6bea",
+      });
+    }
+  }
+
+  throwBaneBoulder() {
+    this.bombs.push({
+      kind: "bane-boulder",
+      x: this.joker.x - 38,
+      y: this.joker.feet - 82,
+      velocityX: -360,
+      velocityY: -390,
+      radius: 20,
+      rotation: 0,
+      landed: false,
+      fuse: 0.72,
+      life: 3.2,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#ef7654",
+    });
+  }
+
+  spawnBaneQuake() {
+    for (let wave = 0; wave < 3; wave += 1) {
+      this.bombs.push({
+        kind: "bane-wave",
+        x: this.joker.x - 45,
+        y: this.joker.feet,
+        width: 70 + wave * 5,
+        height: 32,
+        telegraph: 0.25 + wave * 0.2,
+        active: false,
+        life: 2.5,
+        exploded: false,
+        harmless: false,
+        effectColor: "#ef7654",
+      });
+    }
+  }
+
+  spawnRiddlerMines() {
+    const center = this.clamp(this.player.x + 20, 175, 320);
+    [-68, 0, 68].forEach((offset, index) => {
+      const x = center + offset;
+      const surface = this.getSurface(x);
+      this.bombs.push({
+        kind: "riddler-mine",
+        x,
+        y: surface?.y ?? this.joker.feet,
+        width: 36,
+        height: 52,
+        telegraph: 0.46 + index * 0.09,
+        active: false,
+        activeTime: 0.68,
+        life: 1.55,
+        exploded: false,
+        harmless: false,
+        effectColor: "#75ed86",
+      });
+    });
+  }
+
+  spawnPenguinDiscs() {
+    const low = this.combatRandom() > 0.5;
+    for (let disc = 0; disc < 3; disc += 1) {
+      this.bombs.push({
+        kind: "penguin-disc",
+        x: this.joker.x - 30,
+        y: this.joker.feet - (low ? 27 : 68),
+        yOffset: low ? 27 : 68,
+        velocityX: -475 - disc * 12,
+        radius: 15,
+        delay: 0.15 + disc * 0.19,
+        life: 2.8,
+        rotation: disc * Math.PI * 0.45,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#8fcfff",
+      });
+    }
+  }
+
+  spawnIvyThorns() {
+    const low = this.combatRandom() > 0.5;
+    for (let thorn = 0; thorn < 5; thorn += 1) {
+      this.bombs.push({
+        kind: "ivy-thorn",
+        x: this.joker.x - 28,
+        y: this.joker.feet - (low ? 26 : 67),
+        yOffset: low ? 26 : 67,
+        velocityX: -500 - thorn * 8,
+        radius: 9,
+        delay: 0.12 + thorn * 0.09,
+        life: 2.7,
+        rotation: thorn * 0.5,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#ed6c9e",
+      });
+    }
+  }
+
+  spawnTwoFaceRicochets() {
+    for (let shot = 0; shot < 3; shot += 1) {
+      this.bombs.push({
+        kind: "twoface-ricochet",
+        x: this.joker.x - 31,
+        y: this.joker.feet - 46,
+        velocityX: -455 - shot * 16,
+        velocityY: shot % 2 ? 185 : -185,
+        radius: 9,
+        delay: 0.14 + shot * 0.18,
+        life: 3,
+        rotation: shot * Math.PI,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: shot % 2 ? "#82cbff" : "#ff9b55",
+      });
+    }
+  }
+
+  spawnScarecrowSickles() {
+    const low = this.combatRandom() > 0.5;
+    for (let sickle = 0; sickle < 3; sickle += 1) {
+      this.bombs.push({
+        kind: "scarecrow-sickle",
+        x: this.joker.x - 34,
+        y: this.joker.feet - (low ? 27 : 69),
+        yOffset: low ? 27 : 69,
+        velocityX: -455 - sickle * 12,
+        radius: 18,
+        delay: 0.15 + sickle * 0.2,
+        life: 2.9,
+        rotation: sickle * 0.8,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#d0a654",
+      });
+    }
+  }
+
+  spawnFreezeOrbs() {
+    for (let orb = 0; orb < 2; orb += 1) {
+      this.bombs.push({
+        kind: "freeze-orb",
+        x: this.joker.x - 36,
+        y: this.joker.feet - 58,
+        velocityX: -350 - orb * 25,
+        radius: 17,
+        delay: 0.14 + orb * 0.34,
+        homingTime: 1.35,
+        life: 3.1,
+        rotation: orb * Math.PI,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#8ee9ff",
+      });
+    }
+  }
+
   scheduleVillainAttack() {
     if (!this.joker) return;
     const profile = VILLAIN_PROFILES[this.joker.kind];
     const variation = this.combatRandom();
-    const encounterPressure = Math.min(Math.max(0, this.jokerEncounters - 1) * 0.025, 0.22);
-    const enragedPressure = this.joker.health <= this.joker.maxHealth * 0.5 ? 0.16 : 0;
+    const encounterPressure = Math.min(Math.max(0, this.jokerEncounters - 1) * 0.03, 0.25);
+    const enragedPressure = this.joker.health <= this.joker.maxHealth * 0.5 ? 0.2 : 0;
     const pressure = encounterPressure + enragedPressure;
-    const minimum = Math.max(1.18, profile.minDelay - pressure);
-    const maximum = Math.max(minimum + 0.38, profile.maxDelay - pressure);
+    const minimum = Math.max(0.82, profile.minDelay - pressure);
+    const maximum = Math.max(minimum + 0.3, profile.maxDelay - pressure);
     this.joker.attackTimer = minimum + variation * (maximum - minimum);
   }
 
   performVillainAttack() {
     if (!this.joker || this.joker.state === "defeated") return;
-    const attackCount = this.joker.kind === "bane" ? 2 : 3;
+    const attackCount = 4;
     let attack = Math.floor(this.combatRandom() * attackCount);
     if (attack === this.joker.lastAttack) {
       this.joker.attackRepeat += 1;
@@ -1216,6 +1399,9 @@ class RooftopGame {
       } else if (attack === 1) {
         this.joker.attackLabel = "LAUGHING GAS";
         this.throwJokerGas();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "RAZOR CARDS";
+        this.spawnJokerCards();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.joker.meleeLabel;
         this.startVillainMelee();
@@ -1224,6 +1410,12 @@ class RooftopGame {
       if (attack === 0) {
         this.joker.attackLabel = "GROUND BREAKER";
         this.spawnBaneWave();
+      } else if (attack === 1) {
+        this.joker.attackLabel = "VENOM BOULDER";
+        this.throwBaneBoulder();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "QUAKE COMBO";
+        this.spawnBaneQuake();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.bane.meleeLabel;
         this.startBaneCharge();
@@ -1233,8 +1425,11 @@ class RooftopGame {
         this.joker.attackLabel = "QUESTION VOLLEY";
         this.spawnRiddlerOrbs();
       } else if (attack === 1) {
-        this.joker.attackLabel = "LOW BEAM  •  JUMP";
+        this.joker.attackLabel = "LOW BEAM";
         this.spawnRiddlerLaser();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "QUESTION MINES";
+        this.spawnRiddlerMines();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.riddler.meleeLabel;
         this.startVillainMelee();
@@ -1246,57 +1441,72 @@ class RooftopGame {
       } else if (attack === 1) {
         this.joker.attackLabel = "PENGUIN BOT";
         this.spawnPenguinBot();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "UMBRELLA BLADES";
+        this.spawnPenguinDiscs();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.penguin.meleeLabel;
         this.startVillainMelee();
       }
     } else if (this.joker.kind === "ivy") {
       if (attack === 0) {
-        this.joker.attackLabel = "VINE SURGE  •  JUMP";
+        this.joker.attackLabel = "VINE SURGE";
         this.spawnIvyVine();
       } else if (attack === 1) {
-        this.joker.attackLabel = "SPORE DROP  •  MOVE";
+        this.joker.attackLabel = "SPORE DROP";
         this.spawnIvySpore();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "THORN VOLLEY";
+        this.spawnIvyThorns();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.ivy.meleeLabel;
         this.startVillainMelee();
       }
     } else if (this.joker.kind === "twoface") {
       if (attack === 0) {
-        const low = this.spawnTwoFaceBurst();
-        this.joker.attackLabel = low ? "LOW BURST  •  JUMP" : "HIGH BURST  •  DUCK";
+        this.spawnTwoFaceBurst();
+        this.joker.attackLabel = "DUAL BURST";
       } else if (attack === 1) {
-        this.joker.attackLabel = "EXPLOSIVE COIN  •  JUMP";
+        this.joker.attackLabel = "EXPLOSIVE COIN";
         this.throwTwoFaceCoin();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "RICOCHET";
+        this.spawnTwoFaceRicochets();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.twoface.meleeLabel;
         this.startVillainMelee();
       }
     } else if (this.joker.kind === "scarecrow") {
       if (attack === 0) {
-        const low = this.spawnScarecrowCrows();
-        this.joker.attackLabel = low ? "LOW CROWS  •  JUMP" : "HIGH CROWS  •  DUCK";
+        this.spawnScarecrowCrows();
+        this.joker.attackLabel = "CROW SWARM";
       } else if (attack === 1) {
-        this.joker.attackLabel = "FEAR TOXIN  •  JUMP";
+        this.joker.attackLabel = "FEAR TOXIN";
         this.throwScarecrowGas();
+      } else if (attack === 2) {
+        this.joker.attackLabel = "SICKLE STORM";
+        this.spawnScarecrowSickles();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.scarecrow.meleeLabel;
         this.startVillainMelee();
       }
     } else if (attack === 0) {
-      this.joker.attackLabel = "FREEZE RAY  •  JUMP";
+      this.joker.attackLabel = "FREEZE RAY";
       this.spawnFreezeRay();
     } else if (attack === 1) {
-      this.joker.attackLabel = "ICE SPIKES  •  MOVE / JUMP";
+      this.joker.attackLabel = "ICE SPIKES";
       this.spawnFreezeSpikes();
+    } else if (attack === 2) {
+      this.joker.attackLabel = "CRYO ORBS";
+      this.spawnFreezeOrbs();
     } else {
       this.joker.attackLabel = VILLAIN_PROFILES.freeze.meleeLabel;
       this.startVillainMelee();
     }
 
     this.joker.attackLabelTimer = this.joker.attackMode === "melee-windup"
-      ? VILLAIN_PROFILES[this.joker.kind].meleeWindup + 0.58
-      : 1.18;
+      ? VILLAIN_PROFILES[this.joker.kind].meleeWindup + 0.3
+      : 0.68;
     this.scheduleVillainAttack();
   }
 
@@ -1369,14 +1579,21 @@ class RooftopGame {
         [
           "joker-bomb",
           "joker-gas",
+          "joker-card",
+          "bane-boulder",
           "riddler-orb",
           "penguin-missile",
           "penguin-bot",
+          "penguin-disc",
           "ivy-spore",
+          "ivy-thorn",
           "twoface-bullet",
           "twoface-coin",
+          "twoface-ricochet",
           "scarecrow-crow",
           "scarecrow-gas",
+          "scarecrow-sickle",
+          "freeze-orb",
         ].includes(item.kind) &&
         Math.hypot(batarang.x - item.x, batarang.y - item.y) < item.radius + 12
       ));
@@ -1473,11 +1690,50 @@ class RooftopGame {
         return;
       }
 
+      if (["joker-card", "penguin-disc", "ivy-thorn", "scarecrow-sickle"].includes(hazard.kind)) {
+        const owners = {
+          "joker-card": "joker",
+          "penguin-disc": "penguin",
+          "ivy-thorn": "ivy",
+          "scarecrow-sickle": "scarecrow",
+        };
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === owners[hazard.kind]) {
+            hazard.x = this.joker.x - 30;
+            hazard.y = this.joker.feet - hazard.yOffset;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            const wobble = hazard.kind === "scarecrow-sickle" ? 5 : 2;
+            hazard.y = surface.y - hazard.yOffset + Math.sin(this.elapsed * 12 + hazard.rotation) * wobble;
+          }
+          hazard.rotation += delta * (hazard.kind === "ivy-thorn" ? 8 : 16);
+          hazard.life -= delta;
+        }
+        return;
+      }
+
       if (hazard.kind === "riddler-laser") {
         if (this.joker?.kind === "riddler") {
           hazard.width = Math.max(0, this.joker.x - 35);
           hazard.y = this.joker.feet - hazard.yOffset;
         }
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.activeTime -= delta;
+          if (hazard.activeTime <= 0) hazard.life = 0;
+        }
+        return;
+      }
+
+      if (hazard.kind === "riddler-mine") {
+        const surface = this.getSurface(hazard.x);
+        if (surface) hazard.y = surface.y;
         if (!hazard.active) {
           hazard.telegraph -= delta;
           if (hazard.telegraph <= 0) hazard.active = true;
@@ -1577,7 +1833,7 @@ class RooftopGame {
         return;
       }
 
-      if (hazard.kind === "twoface-coin") {
+      if (hazard.kind === "twoface-coin" || hazard.kind === "bane-boulder") {
         hazard.rotation += delta * (hazard.landed ? 12 : 18);
         if (!hazard.landed) {
           const previousY = hazard.y;
@@ -1596,13 +1852,40 @@ class RooftopGame {
             hazard.velocityY = 0;
           }
         } else {
-          hazard.x -= (speed + 70) * delta;
+          const rollSpeed = hazard.kind === "bane-boulder" ? speed + 115 : speed + 70;
+          hazard.x -= rollSpeed * delta;
           const surface = this.getSurface(hazard.x);
           if (surface) hazard.y = surface.y - hazard.radius;
           hazard.fuse -= delta;
           if (hazard.fuse <= 0) this.explodeBomb(hazard);
         }
         hazard.life -= delta;
+        return;
+      }
+
+      if (hazard.kind === "twoface-ricochet") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "twoface") {
+            hazard.x = this.joker.x - 31;
+            hazard.y = this.joker.feet - 46;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          hazard.y += hazard.velocityY * delta;
+          const surface = this.getSurface(hazard.x);
+          const lowerBound = (surface?.y ?? 410) - 21;
+          const upperBound = (surface?.y ?? 410) - 83;
+          if (hazard.y >= lowerBound) {
+            hazard.y = lowerBound;
+            hazard.velocityY = -Math.abs(hazard.velocityY);
+          } else if (hazard.y <= upperBound) {
+            hazard.y = upperBound;
+            hazard.velocityY = Math.abs(hazard.velocityY);
+          }
+          hazard.rotation += delta * 20;
+          hazard.life -= delta;
+        }
         return;
       }
 
@@ -1685,6 +1968,26 @@ class RooftopGame {
           hazard.activeTime -= delta;
           if (hazard.activeTime <= 0) hazard.life = 0;
         }
+        return;
+      }
+
+      if (hazard.kind === "freeze-orb") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "freeze") {
+            hazard.x = this.joker.x - 36;
+            hazard.y = this.joker.feet - 58;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          if (hazard.homingTime > 0) {
+            const targetY = this.player.feet - 42 + this.player.duckAmount * 15;
+            hazard.y += (targetY - hazard.y) * (1 - Math.exp(-4.6 * delta));
+            hazard.homingTime -= delta;
+          }
+          hazard.rotation += delta * 7;
+          hazard.life -= delta;
+        }
       }
     });
     this.bombs = this.bombs.filter((hazard) => (
@@ -1731,7 +2034,7 @@ class RooftopGame {
           this.joker.feet = this.joker.landingFeet;
           this.joker.velocityY = 0;
           this.joker.state = "fighting";
-          this.joker.attackTimer = 0.9 + this.combatRandom() * 0.38;
+          this.joker.attackTimer = 0.62 + this.combatRandom() * 0.26;
           this.spawnDust(this.joker.x, this.joker.feet - 2, 26, this.joker.color);
         }
       } else {
@@ -1739,14 +2042,14 @@ class RooftopGame {
       }
       if (this.joker.entryStyle === "dash" && Math.abs(this.joker.x - this.joker.targetX) < 8) {
         this.joker.state = "fighting";
-        this.joker.attackTimer = 0.9 + this.combatRandom() * 0.38;
+        this.joker.attackTimer = 0.62 + this.combatRandom() * 0.26;
       }
       return;
     }
 
     if (this.joker.attackMode === "melee-windup") {
       this.joker.modeTimer -= delta;
-      this.joker.x = Math.min(this.joker.x + 22 * delta, this.joker.targetX + 28);
+      this.joker.x = Math.max(this.joker.x - 82 * delta, this.joker.meleeTargetX + 120);
       if (this.joker.modeTimer <= 0) this.joker.attackMode = "melee-strike";
       return;
     }
@@ -1767,7 +2070,7 @@ class RooftopGame {
       if (this.joker.x <= this.joker.meleeTargetX) {
         this.joker.x = this.joker.meleeTargetX;
         this.joker.attackMode = "melee-recover";
-        this.joker.modeTimer = 0.18;
+        this.joker.modeTimer = 0.11;
       }
       return;
     }
@@ -1779,7 +2082,7 @@ class RooftopGame {
     }
 
     if (this.joker.attackMode === "melee-return") {
-      this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-3.4 * delta));
+      this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-4.8 * delta));
       if (Math.abs(this.joker.x - this.joker.targetX) < 9) {
         this.joker.attackMode = null;
         this.joker.meleeConnected = false;
@@ -1835,6 +2138,22 @@ class RooftopGame {
   hazardCollisionBox(hazard) {
     if (hazard.harmless || hazard.exploded) return null;
 
+    if (
+      [
+        "joker-card",
+        "riddler-orb",
+        "penguin-missile",
+        "penguin-disc",
+        "ivy-thorn",
+        "twoface-bullet",
+        "twoface-ricochet",
+        "scarecrow-crow",
+        "scarecrow-sickle",
+        "freeze-orb",
+      ].includes(hazard.kind) &&
+      hazard.delay > 0
+    ) return null;
+
     if (hazard.kind === "joker-gas" && hazard.active) {
       return { x: hazard.x - 42, y: hazard.y - 30, width: 84, height: 60 };
     }
@@ -1848,6 +2167,17 @@ class RooftopGame {
     if (hazard.kind === "riddler-laser") {
       return hazard.active && hazard.activeTime > 0
         ? { x: hazard.x, y: hazard.y - hazard.height / 2, width: hazard.width, height: hazard.height }
+        : null;
+    }
+
+    if (hazard.kind === "riddler-mine") {
+      return hazard.active && hazard.activeTime > 0
+        ? {
+          x: hazard.x - hazard.width / 2,
+          y: hazard.y - hazard.height,
+          width: hazard.width,
+          height: hazard.height,
+        }
         : null;
     }
 
@@ -2537,12 +2867,6 @@ class RooftopGame {
         context.shadowBlur = hazard.active ? 18 : 7;
         context.fillStyle = hazard.active ? "#8dffa1" : "#3b9e55";
         context.fillRect(hazard.x, hazard.y - (hazard.active ? 5 : 1), hazard.width, hazard.active ? 10 : 2);
-        for (let marker = 105; marker < hazard.width; marker += 150) {
-          context.fillStyle = "#dfff7d";
-          context.font = "700 11px 'Courier New', monospace";
-          context.textAlign = "center";
-          context.fillText("↑ JUMP", marker, hazard.y - 10);
-        }
         context.restore();
         return;
       }
@@ -2626,10 +2950,6 @@ class RooftopGame {
           context.beginPath();
           context.ellipse(0, -3, pulse, 8, 0, 0, Math.PI * 2);
           context.stroke();
-          context.fillStyle = "#d5ff7d";
-          context.font = "700 10px 'Courier New', monospace";
-          context.textAlign = "center";
-          context.fillText("↑ JUMP", 0, -16);
         } else {
           context.strokeStyle = "#3fc85a";
           context.lineWidth = 7;
@@ -2670,10 +2990,6 @@ class RooftopGame {
           context.beginPath();
           context.ellipse(hazard.x, groundY, 38, 10, 0, 0, Math.PI * 2);
           context.stroke();
-          context.fillStyle = "#ffd0df";
-          context.font = "700 10px 'Courier New', monospace";
-          context.textAlign = "center";
-          context.fillText("MOVE", hazard.x, groundY - 16);
         } else if (hazard.landed) {
           context.translate(hazard.x, hazard.y);
           context.globalAlpha = 0.5;
@@ -2846,12 +3162,6 @@ class RooftopGame {
           context.fillStyle = "rgba(92,207,244,.45)";
           context.fillRect(hazard.x, hazard.y - 12, hazard.width, 24);
         }
-        for (let marker = 105; marker < hazard.width; marker += 150) {
-          context.fillStyle = "#e5fbff";
-          context.font = "700 11px 'Courier New', monospace";
-          context.textAlign = "center";
-          context.fillText("↑ JUMP", marker, hazard.y - 14);
-        }
         context.restore();
         return;
       }
@@ -2868,10 +3178,6 @@ class RooftopGame {
           context.beginPath();
           context.ellipse(0, -3, 22, 7, 0, 0, Math.PI * 2);
           context.stroke();
-          context.fillStyle = "#e8fcff";
-          context.font = "700 9px 'Courier New', monospace";
-          context.textAlign = "center";
-          context.fillText("MOVE", 0, -15);
         } else {
           const gradient = context.createLinearGradient(0, -hazard.height, 0, 0);
           gradient.addColorStop(0, "#e9fdff");
@@ -2890,6 +3196,225 @@ class RooftopGame {
           context.lineWidth = 2;
           context.stroke();
         }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "joker-card") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = hazard.effectColor;
+        context.shadowBlur = 9;
+        context.fillStyle = "#ece9dd";
+        context.fillRect(-12, -7, 24, 14);
+        context.strokeStyle = hazard.effectColor;
+        context.lineWidth = 2;
+        context.strokeRect(-12, -7, 24, 14);
+        context.fillStyle = hazard.effectColor;
+        context.beginPath();
+        context.moveTo(0, -5);
+        context.lineTo(5, 0);
+        context.lineTo(0, 5);
+        context.lineTo(-5, 0);
+        context.closePath();
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "bane-boulder") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.shadowColor = "#78f0a2";
+        context.shadowBlur = 10;
+        context.fillStyle = "#3d4a41";
+        context.strokeStyle = "#77917b";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(-18, -8);
+        context.lineTo(-9, -20);
+        context.lineTo(8, -18);
+        context.lineTo(20, -5);
+        context.lineTo(14, 16);
+        context.lineTo(-7, 20);
+        context.lineTo(-21, 7);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.strokeStyle = "#70e698";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-8, -13);
+        context.lineTo(0, -3);
+        context.lineTo(-5, 7);
+        context.moveTo(0, -3);
+        context.lineTo(11, 3);
+        context.stroke();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "riddler-mine") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.shadowColor = "#6fff8d";
+        context.shadowBlur = hazard.active ? 17 : 7;
+        if (!hazard.active) {
+          context.globalAlpha = 0.45 + Math.sin(this.elapsed * 22) * 0.2;
+          context.strokeStyle = "#75ef8a";
+          context.lineWidth = 3;
+          context.beginPath();
+          context.ellipse(0, -3, 22, 7, 0, 0, Math.PI * 2);
+          context.stroke();
+        } else {
+          context.fillStyle = "rgba(75,232,111,.45)";
+          context.beginPath();
+          context.moveTo(-18, 0);
+          context.lineTo(-10, -33);
+          context.lineTo(0, -20);
+          context.lineTo(10, -52);
+          context.lineTo(18, 0);
+          context.closePath();
+          context.fill();
+          context.strokeStyle = "#a3ff7b";
+          context.lineWidth = 2;
+          context.stroke();
+          context.fillStyle = "#dfff77";
+          context.beginPath();
+          context.arc(0, -10, 4, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "penguin-disc") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = "#8fcfff";
+        context.shadowBlur = 11;
+        context.fillStyle = "#172537";
+        context.strokeStyle = "#9bdcff";
+        context.lineWidth = 2;
+        for (let blade = 0; blade < 4; blade += 1) {
+          context.rotate(Math.PI / 2);
+          context.beginPath();
+          context.moveTo(0, 0);
+          context.quadraticCurveTo(8, -14, 18, -4);
+          context.lineTo(7, 4);
+          context.closePath();
+          context.fill();
+          context.stroke();
+        }
+        context.fillStyle = "#e4a84d";
+        context.beginPath();
+        context.arc(0, 0, 4, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "ivy-thorn") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation * 0.2);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = "#ef6e9f";
+        context.shadowBlur = 10;
+        context.fillStyle = "#e9699a";
+        context.beginPath();
+        context.moveTo(-14, -5);
+        context.lineTo(15, 0);
+        context.lineTo(-14, 5);
+        context.lineTo(-7, 0);
+        context.closePath();
+        context.fill();
+        context.fillStyle = "#71d66f";
+        context.beginPath();
+        context.ellipse(-9, -7, 8, 3, -0.5, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "twoface-ricochet") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = hazard.effectColor;
+        context.shadowBlur = 13;
+        context.fillStyle = "#f0a44e";
+        context.beginPath();
+        context.arc(0, 0, 9, Math.PI / 2, Math.PI * 1.5);
+        context.closePath();
+        context.fill();
+        context.fillStyle = "#82cbff";
+        context.beginPath();
+        context.arc(0, 0, 9, -Math.PI / 2, Math.PI / 2);
+        context.closePath();
+        context.fill();
+        context.strokeStyle = "#fff2c2";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(0, 0, 9, 0, Math.PI * 2);
+        context.stroke();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "scarecrow-sickle") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = "#d0a654";
+        context.shadowBlur = 9;
+        context.strokeStyle = "#c9d1ce";
+        context.lineWidth = 6;
+        context.beginPath();
+        context.arc(0, 0, 16, Math.PI * 0.25, Math.PI * 1.55);
+        context.stroke();
+        context.strokeStyle = "#795b32";
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(11, 11);
+        context.lineTo(24, 24);
+        context.stroke();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "freeze-orb") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(hazard.rotation);
+        context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
+        context.shadowColor = "#8ee9ff";
+        context.shadowBlur = 18;
+        const orb = context.createRadialGradient(0, 0, 2, 0, 0, 19);
+        orb.addColorStop(0, "#f1feff");
+        orb.addColorStop(0.45, "#8ee9ff");
+        orb.addColorStop(1, "rgba(54,139,180,.28)");
+        context.fillStyle = orb;
+        context.beginPath();
+        context.arc(0, 0, 19, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "#ddfbff";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-13, 0);
+        context.lineTo(13, 0);
+        context.moveTo(0, -13);
+        context.lineTo(0, 13);
+        context.moveTo(-9, -9);
+        context.lineTo(9, 9);
+        context.stroke();
         context.restore();
         return;
       }
@@ -3836,18 +4361,12 @@ class RooftopGame {
       }
     }
 
-    if ((joker.attackLabelTimer > 0 || enraged) && joker.state !== "defeated") {
-      context.globalAlpha = joker.attackLabelTimer > 0
-        ? this.clamp(joker.attackLabelTimer / 0.2, 0, 1)
-        : 0.62 + Math.sin(this.elapsed * 7) * 0.2;
-      context.fillStyle = enraged ? "#ff667d" : profile.color;
+    if (enraged && joker.state !== "defeated") {
+      context.globalAlpha = 0.62 + Math.sin(this.elapsed * 7) * 0.2;
+      context.fillStyle = "#ff667d";
       context.font = "700 9px 'Courier New', monospace";
       context.textAlign = "right";
-      context.fillText(
-        joker.attackLabelTimer > 0 ? `// ${joker.attackLabel}` : "// ENRAGED",
-        616,
-        129,
-      );
+      context.fillText("// ENRAGED", 616, 129);
       context.globalAlpha = 1;
     }
 
@@ -3873,32 +4392,23 @@ class RooftopGame {
   }
 
   drawDamageFeedback() {
-    if (this.damageFlash <= 0 && this.damageBannerTime <= 0) return;
+    if (this.damageBannerTime <= 0 || this.playerHearts <= 0) return;
     const context = this.context;
     context.save();
-    if (this.damageFlash > 0) {
-      context.fillStyle = `rgba(255, 45, 78, ${this.clamp(this.damageFlash * 0.42, 0, 0.14)})`;
-      context.fillRect(0, 0, 960, 540);
-      context.strokeStyle = `rgba(255, 74, 99, ${this.clamp(this.damageFlash * 2.3, 0, 0.72)})`;
-      context.lineWidth = 9;
-      context.strokeRect(5, 5, 950, 530);
-    }
-    if (this.damageBannerTime > 0 && this.playerHearts > 0) {
-      context.globalAlpha = this.clamp(this.damageBannerTime / 0.2, 0, 1);
-      context.fillStyle = "rgba(24, 5, 16, .86)";
-      context.strokeStyle = "#ff5870";
-      context.lineWidth = 1;
-      context.fillRect(340, 187, 280, 36);
-      context.strokeRect(340.5, 187.5, 279, 35);
-      context.fillStyle = "#ffe9ed";
-      context.font = "700 12px 'Courier New', monospace";
-      context.textAlign = "center";
-      context.fillText(
-        `BOSS HIT  •  ${this.playerHearts} ${this.playerHearts === 1 ? "HEART" : "HEARTS"} LEFT`,
-        480,
-        210,
-      );
-    }
+    context.globalAlpha = this.clamp(this.damageBannerTime / 0.2, 0, 1);
+    context.fillStyle = "rgba(24, 5, 16, .86)";
+    context.strokeStyle = "#ff5870";
+    context.lineWidth = 1;
+    context.fillRect(340, 187, 280, 36);
+    context.strokeRect(340.5, 187.5, 279, 35);
+    context.fillStyle = "#ffe9ed";
+    context.font = "700 12px 'Courier New', monospace";
+    context.textAlign = "center";
+    context.fillText(
+      `BOSS HIT  •  ${this.playerHearts} ${this.playerHearts === 1 ? "HEART" : "HEARTS"} LEFT`,
+      480,
+      210,
+    );
     context.restore();
   }
 
