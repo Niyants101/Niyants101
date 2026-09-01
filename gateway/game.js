@@ -795,7 +795,7 @@ class RooftopGame {
     this.bossArenaActive = false;
 
     if (arena) {
-      const runwayEnd = this.player.x + 560;
+      const runwayEnd = 1040;
       arena.width = Math.max(260, runwayEnd - arena.x);
       this.platforms = this.platforms
         .filter((platform) => platform === arena || platform.x + platform.width < arena.x)
