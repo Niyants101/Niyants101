@@ -7,6 +7,40 @@ const message = document.querySelector("#message");
 
 let game = null;
 const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v2-complete";
+const VILLAIN_PROFILES = Object.freeze({
+  joker: {
+    name: "JOKER",
+    health: 7,
+    color: "#b26ade",
+    hitColor: "#75ff8f",
+    minDelay: 1.6,
+    maxDelay: 2.4,
+  },
+  bane: {
+    name: "BANE",
+    health: 11,
+    color: "#e06b50",
+    hitColor: "#72f4df",
+    minDelay: 1.9,
+    maxDelay: 2.7,
+  },
+  riddler: {
+    name: "RIDDLER",
+    health: 8,
+    color: "#5be07c",
+    hitColor: "#d8ff65",
+    minDelay: 2.05,
+    maxDelay: 2.8,
+  },
+  penguin: {
+    name: "PENGUIN",
+    health: 9,
+    color: "#78a9dc",
+    hitColor: "#b9e8ff",
+    minDelay: 2,
+    maxDelay: 2.8,
+  },
+});
 
 function readStorage(key, fallback = "") {
   try {
@@ -227,6 +261,8 @@ class RooftopGame {
     this.joker = null;
     this.nextJokerDistance = 500;
     this.jokerEncounters = 0;
+    this.lastVillain = null;
+    this.villainQueue = ["joker", ...this.shuffleVillains(["bane", "riddler", "penguin"], 31)];
     this.bossBannerTime = 0;
     this.throwCooldown = 0;
     this.throwAnimation = 0;
@@ -549,6 +585,31 @@ class RooftopGame {
     this.particles = this.particles.filter((particle) => particle.life > 0);
   }
 
+  shuffleVillains(villains, salt) {
+    const shuffled = [...villains];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const characterSeed = shuffled[index].charCodeAt(0) + shuffled[index].charCodeAt(1);
+      const swapIndex = Math.floor(this.random(salt + index * 31 + characterSeed) * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    return shuffled;
+  }
+
+  nextVillain() {
+    if (this.villainQueue.length === 0) {
+      this.villainQueue = this.shuffleVillains(
+        Object.keys(VILLAIN_PROFILES),
+        this.seed + this.jokerEncounters * 23,
+      );
+      if (this.villainQueue[0] === this.lastVillain) {
+        this.villainQueue.push(this.villainQueue.shift());
+      }
+    }
+    const villain = this.villainQueue.shift();
+    this.lastVillain = villain;
+    return villain;
+  }
+
   prepareBossArena() {
     const arena = this.platforms.find((platform) => (
       this.player.x >= platform.x && this.player.x <= platform.x + platform.width
@@ -567,9 +628,11 @@ class RooftopGame {
     return arena;
   }
 
-  spawnJoker() {
+  spawnVillain() {
     const arena = this.prepareBossArena();
-    const maxHealth = 7 + Math.min(this.jokerEncounters, 3);
+    const kind = this.nextVillain();
+    const profile = VILLAIN_PROFILES[kind];
+    const maxHealth = profile.health + Math.min(Math.floor(this.jokerEncounters / 4), 3);
     this.jokerEncounters += 1;
     this.nextJokerDistance += 500;
     this.batarangs = [];
@@ -578,17 +641,26 @@ class RooftopGame {
       x: 1040,
       targetX: 730,
       feet: arena?.y ?? 410,
+      kind,
+      name: profile.name,
+      color: profile.color,
       health: maxHealth,
       maxHealth,
       state: "entering",
-      attackTimer: 0.82,
+      attackTimer: 1.05,
+      lastAttack: this.random(this.jokerEncounters * 29) > 0.5 ? 0 : 1,
+      attackRepeat: 0,
+      attackMode: null,
+      modeTimer: 0,
+      attackLabel: "",
+      attackLabelTimer: 0,
       hitFlash: 0,
       defeatTimer: 0,
       velocityY: 0,
       rotation: 0,
     };
     this.bossBannerTime = 3.2;
-    this.phaseNode.textContent = "JOKER ENCOUNTER";
+    this.phaseNode.textContent = `${profile.name} ENCOUNTER`;
   }
 
   throwBatarang() {
@@ -608,6 +680,7 @@ class RooftopGame {
     if (!this.joker || this.joker.state === "defeated") return;
     const variation = this.random(this.elapsed * 9 + this.jokerEncounters * 17);
     this.bombs.push({
+      kind: "joker-bomb",
       x: this.joker.x - 23,
       y: this.joker.feet - 55,
       velocityX: -245 - variation * 70,
@@ -619,7 +692,187 @@ class RooftopGame {
       exploded: false,
       explosionTime: 0,
       harmless: false,
+      effectColor: "#ff9d4d",
     });
+  }
+
+  throwJokerGas() {
+    if (!this.joker || this.joker.state === "defeated") return;
+    const variation = this.random(this.elapsed * 7 + this.jokerEncounters * 19);
+    this.bombs.push({
+      kind: "joker-gas",
+      x: this.joker.x - 24,
+      y: this.joker.feet - 55,
+      velocityX: -215 - variation * 50,
+      velocityY: -245 - variation * 45,
+      radius: 10,
+      rotation: 0,
+      landed: false,
+      active: false,
+      fuse: 0.62,
+      life: 3.1,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#78e17f",
+    });
+  }
+
+  spawnBaneWave() {
+    this.bombs.push({
+      kind: "bane-wave",
+      x: this.joker.x - 45,
+      y: this.joker.feet,
+      width: 62,
+      height: 28,
+      telegraph: 0.68,
+      active: false,
+      life: 2.4,
+      exploded: false,
+      harmless: false,
+      effectColor: "#ef7654",
+    });
+  }
+
+  startBaneCharge() {
+    this.joker.attackMode = "bane-charge-windup";
+    this.joker.modeTimer = 0.72;
+  }
+
+  spawnRiddlerOrbs() {
+    const firstHigh = this.random(this.elapsed * 11 + this.jokerEncounters * 5) > 0.5;
+    [firstHigh, !firstHigh].forEach((high, index) => {
+      this.bombs.push({
+        kind: "riddler-orb",
+        x: this.joker.x - 28,
+        y: this.joker.feet - (high ? 72 : 25),
+        yOffset: high ? 72 : 25,
+        velocityX: -325,
+        radius: 14,
+        delay: index * 0.62,
+        life: 3.2,
+        rotation: index * Math.PI,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#79ef73",
+      });
+    });
+  }
+
+  spawnRiddlerLaser() {
+    const high = this.random(this.elapsed * 17 + this.jokerEncounters * 13) > 0.5;
+    this.bombs.push({
+      kind: "riddler-laser",
+      x: 0,
+      y: this.joker.feet - (high ? 61 : 20),
+      yOffset: high ? 61 : 20,
+      width: Math.max(0, this.joker.x - 35),
+      height: 9,
+      telegraph: 0.9,
+      active: false,
+      activeTime: 0.48,
+      life: 1.38,
+      exploded: false,
+      harmless: false,
+      effectColor: "#65f58a",
+    });
+  }
+
+  spawnPenguinMissiles() {
+    const firstHigh = this.random(this.elapsed * 21 + this.jokerEncounters * 3) > 0.5;
+    [firstHigh, !firstHigh].forEach((high, index) => {
+      this.bombs.push({
+        kind: "penguin-missile",
+        x: this.joker.x - 24,
+        y: this.joker.feet - 77,
+        targetOffset: high ? 69 : 27,
+        velocityX: -345,
+        radius: 12,
+        delay: 0.42 + index * 0.52,
+        life: 3,
+        rotation: 0,
+        exploded: false,
+        explosionTime: 0,
+        harmless: false,
+        effectColor: "#78c8ff",
+      });
+    });
+  }
+
+  spawnPenguinBot() {
+    this.bombs.push({
+      kind: "penguin-bot",
+      x: this.joker.x - 34,
+      y: this.joker.feet - 17,
+      width: 36,
+      height: 34,
+      radius: 18,
+      life: 3.8,
+      fuse: 3.25,
+      rotation: 0,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+      effectColor: "#8fcfff",
+    });
+  }
+
+  scheduleVillainAttack() {
+    if (!this.joker) return;
+    const profile = VILLAIN_PROFILES[this.joker.kind];
+    const variation = this.random(this.elapsed * 13 + this.jokerEncounters * 37);
+    this.joker.attackTimer = profile.minDelay + variation * (profile.maxDelay - profile.minDelay);
+  }
+
+  performVillainAttack() {
+    if (!this.joker || this.joker.state === "defeated") return;
+    let attack = this.random(this.elapsed * 19 + this.jokerEncounters * 43) > 0.5 ? 1 : 0;
+    if (attack === this.joker.lastAttack) {
+      this.joker.attackRepeat += 1;
+      if (this.joker.attackRepeat > 1) {
+        attack = attack === 0 ? 1 : 0;
+        this.joker.attackRepeat = 0;
+      }
+    } else {
+      this.joker.attackRepeat = 0;
+    }
+    this.joker.lastAttack = attack;
+
+    if (this.joker.kind === "joker") {
+      if (attack === 0) {
+        this.joker.attackLabel = "BOMB TOSS";
+        this.throwJokerBomb();
+      } else {
+        this.joker.attackLabel = "LAUGHING GAS";
+        this.throwJokerGas();
+      }
+    } else if (this.joker.kind === "bane") {
+      if (attack === 0) {
+        this.joker.attackLabel = "GROUND BREAKER";
+        this.spawnBaneWave();
+      } else {
+        this.joker.attackLabel = "VENOM CHARGE";
+        this.startBaneCharge();
+      }
+    } else if (this.joker.kind === "riddler") {
+      if (attack === 0) {
+        this.joker.attackLabel = "QUESTION VOLLEY";
+        this.spawnRiddlerOrbs();
+      } else {
+        this.joker.attackLabel = "RIDDLE BEAM";
+        this.spawnRiddlerLaser();
+      }
+    } else if (attack === 0) {
+      this.joker.attackLabel = "UMBRELLA MISSILES";
+      this.spawnPenguinMissiles();
+    } else {
+      this.joker.attackLabel = "PENGUIN BOT";
+      this.spawnPenguinBot();
+    }
+
+    this.joker.attackLabelTimer = 1.05;
+    this.scheduleVillainAttack();
   }
 
   explodeBomb(bomb, harmless = bomb.harmless) {
@@ -629,7 +882,12 @@ class RooftopGame {
     bomb.explosionTime = 0.34;
     bomb.velocityX = 0;
     bomb.velocityY = 0;
-    this.spawnDust(bomb.x, bomb.y, 18, harmless ? "#72f4df" : "#ff9d4d");
+    this.spawnDust(
+      bomb.x,
+      bomb.y,
+      18,
+      harmless ? "#72f4df" : (bomb.effectColor ?? "#ff9d4d"),
+    );
   }
 
   defeatJoker() {
@@ -651,7 +909,12 @@ class RooftopGame {
     this.joker.health -= 1;
     this.joker.hitFlash = 0.12;
     this.joker.x += 9;
-    this.spawnDust(this.joker.x - 12, this.joker.feet - 48, 10, "#75ff8f");
+    this.spawnDust(
+      this.joker.x - 12,
+      this.joker.feet - 48,
+      10,
+      VILLAIN_PROFILES[this.joker.kind].hitColor,
+    );
     if (this.joker.health <= 0) this.defeatJoker();
   }
 
@@ -676,6 +939,7 @@ class RooftopGame {
 
       const bomb = this.bombs.find((item) => (
         !item.exploded &&
+        ["joker-bomb", "joker-gas", "riddler-orb", "penguin-missile", "penguin-bot"].includes(item.kind) &&
         Math.hypot(batarang.x - item.x, batarang.y - item.y) < item.radius + 12
       ));
       if (bomb) {
@@ -689,46 +953,145 @@ class RooftopGame {
   }
 
   updateBombs(delta, speed) {
-    this.bombs.forEach((bomb) => {
-      if (bomb.exploded) {
-        bomb.explosionTime -= delta;
+    this.bombs.forEach((hazard) => {
+      if (hazard.exploded) {
+        hazard.explosionTime -= delta;
         return;
       }
 
-      bomb.rotation += delta * (bomb.landed ? 4 : 11);
-      if (!bomb.landed) {
-        const previousY = bomb.y;
-        bomb.x += bomb.velocityX * delta;
-        bomb.velocityY += 900 * delta;
-        bomb.y += bomb.velocityY * delta;
-        const surface = this.getSurface(bomb.x);
-        if (
-          surface &&
-          bomb.velocityY >= 0 &&
-          previousY + bomb.radius <= surface.y + 4 &&
-          bomb.y + bomb.radius >= surface.y
-        ) {
-          bomb.landed = true;
-          bomb.y = surface.y - bomb.radius;
-          bomb.velocityX = -speed;
-          bomb.velocityY = 0;
+      if (hazard.kind === "joker-bomb" || hazard.kind === "joker-gas") {
+        hazard.rotation += delta * (hazard.landed ? 4 : 11);
+        if (!hazard.landed) {
+          const previousY = hazard.y;
+          hazard.x += hazard.velocityX * delta;
+          hazard.velocityY += 900 * delta;
+          hazard.y += hazard.velocityY * delta;
+          const surface = this.getSurface(hazard.x);
+          if (
+            surface &&
+            hazard.velocityY >= 0 &&
+            previousY + hazard.radius <= surface.y + 4 &&
+            hazard.y + hazard.radius >= surface.y
+          ) {
+            hazard.landed = true;
+            hazard.y = surface.y - hazard.radius;
+            hazard.velocityX = -speed;
+            hazard.velocityY = 0;
+          }
+        } else {
+          hazard.x -= speed * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            const targetY = surface.y - (hazard.active ? 30 : hazard.radius);
+            hazard.y += (targetY - hazard.y) * (1 - Math.exp(-18 * delta));
+          }
+          hazard.fuse -= delta;
+          if (hazard.kind === "joker-bomb" && hazard.fuse <= 0) {
+            this.explodeBomb(hazard);
+          } else if (hazard.kind === "joker-gas") {
+            if (!hazard.active && hazard.fuse <= 0) hazard.active = true;
+            if (hazard.active) {
+              hazard.life -= delta;
+              if (hazard.life <= 0) this.explodeBomb(hazard, true);
+            }
+          }
         }
-      } else {
-        bomb.x -= speed * delta;
-        const surface = this.getSurface(bomb.x);
-        if (surface) bomb.y += (surface.y - bomb.radius - bomb.y) * (1 - Math.exp(-18 * delta));
-        bomb.fuse -= delta;
-        if (bomb.fuse <= 0) this.explodeBomb(bomb);
+        return;
+      }
+
+      if (hazard.kind === "bane-wave") {
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (this.joker?.kind === "bane") {
+            hazard.x = this.joker.x - 45;
+            hazard.y = this.joker.feet;
+          }
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.x -= (speed + 290) * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) hazard.y = surface.y;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "riddler-orb") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "riddler") {
+            hazard.x = this.joker.x - 28;
+            hazard.y = this.joker.feet - hazard.yOffset;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            hazard.y = surface.y - hazard.yOffset + Math.sin(this.elapsed * 8 + hazard.rotation) * 3;
+          }
+          hazard.rotation += delta * 5;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "riddler-laser") {
+        if (this.joker?.kind === "riddler") {
+          hazard.width = Math.max(0, this.joker.x - 35);
+          hazard.y = this.joker.feet - hazard.yOffset;
+        }
+        if (!hazard.active) {
+          hazard.telegraph -= delta;
+          if (hazard.telegraph <= 0) hazard.active = true;
+        } else {
+          hazard.activeTime -= delta;
+          if (hazard.activeTime <= 0) hazard.life = 0;
+        }
+        return;
+      }
+
+      if (hazard.kind === "penguin-missile") {
+        if (hazard.delay > 0) {
+          hazard.delay -= delta;
+          if (this.joker?.kind === "penguin") {
+            hazard.x = this.joker.x - 24;
+            hazard.y = this.joker.feet - 77;
+          }
+        } else {
+          hazard.x += hazard.velocityX * delta;
+          const surface = this.getSurface(hazard.x);
+          if (surface) {
+            const targetY = surface.y - hazard.targetOffset;
+            hazard.y += (targetY - hazard.y) * (1 - Math.exp(-5.5 * delta));
+          }
+          hazard.rotation += delta * 8;
+          hazard.life -= delta;
+        }
+        return;
+      }
+
+      if (hazard.kind === "penguin-bot") {
+        hazard.x -= (speed + 105) * delta;
+        const surface = this.getSurface(hazard.x);
+        if (surface) hazard.y = surface.y - 17;
+        hazard.rotation += delta * 9;
+        hazard.fuse -= delta;
+        hazard.life -= delta;
+        if (hazard.fuse <= 0) this.explodeBomb(hazard);
       }
     });
-    this.bombs = this.bombs.filter((bomb) => (
-      bomb.x > -100 && bomb.y < 620 && (!bomb.exploded || bomb.explosionTime > 0)
+    this.bombs = this.bombs.filter((hazard) => (
+      hazard.x > -120 &&
+      hazard.y < 640 &&
+      (hazard.life === undefined || hazard.life > 0) &&
+      (!hazard.exploded || hazard.explosionTime > 0)
     ));
   }
 
   updateJoker(delta) {
     if (!this.joker) return;
     this.joker.hitFlash = Math.max(0, this.joker.hitFlash - delta);
+    this.joker.attackLabelTimer = Math.max(0, this.joker.attackLabelTimer - delta);
 
     if (this.joker.state === "defeated") {
       this.joker.defeatTimer -= delta;
@@ -751,28 +1114,38 @@ class RooftopGame {
 
     if (this.joker.state === "entering") {
       this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-2.7 * delta));
-      if (this.joker.x < 930) {
-        this.joker.attackTimer -= delta;
-        if (this.joker.attackTimer <= 0) {
-          this.throwJokerBomb();
-          this.joker.attackTimer = 1.8;
-        }
-      }
       if (Math.abs(this.joker.x - this.joker.targetX) < 8) {
         this.joker.state = "fighting";
-        this.joker.attackTimer = 0.72;
+        this.joker.attackTimer = 0.95 + this.random(this.jokerEncounters * 41) * 0.4;
       }
       return;
     }
 
-    const targetX = 720 + Math.sin(this.elapsed * 0.9) * 34;
+    if (this.joker.attackMode === "bane-charge-windup") {
+      this.joker.modeTimer -= delta;
+      if (this.joker.modeTimer <= 0) this.joker.attackMode = "bane-charge";
+      return;
+    }
+
+    if (this.joker.attackMode === "bane-charge") {
+      this.joker.x -= 510 * delta;
+      if (this.joker.x <= 285) this.joker.attackMode = "bane-return";
+      return;
+    }
+
+    if (this.joker.attackMode === "bane-return") {
+      this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-3.4 * delta));
+      if (Math.abs(this.joker.x - this.joker.targetX) < 9) this.joker.attackMode = null;
+      return;
+    }
+
+    const baseTarget = this.joker.kind === "bane"
+      ? 750
+      : (this.joker.kind === "penguin" ? 700 : 720);
+    const targetX = baseTarget + Math.sin(this.elapsed * 0.9) * 34;
     this.joker.x += (targetX - this.joker.x) * (1 - Math.exp(-2.4 * delta));
     this.joker.attackTimer -= delta;
-    if (this.joker.attackTimer <= 0) {
-      this.throwJokerBomb();
-      const variation = this.random(this.elapsed * 13 + this.jokerEncounters * 7);
-      this.joker.attackTimer = 1.45 + variation * 0.85;
-    }
+    if (this.joker.attackTimer <= 0) this.performVillainAttack();
   }
 
   updateCombat(delta, speed) {
@@ -792,7 +1165,7 @@ class RooftopGame {
       !this.player.onRamp &&
       this.distance >= this.nextJokerDistance
     ) {
-      this.spawnJoker();
+      this.spawnVillain();
     }
 
     this.updateJoker(delta);
@@ -800,7 +1173,67 @@ class RooftopGame {
     this.updateBombs(delta, speed);
   }
 
+  hazardCollisionBox(hazard) {
+    if (hazard.harmless || hazard.exploded) return null;
+
+    if (hazard.kind === "joker-gas" && hazard.active) {
+      return { x: hazard.x - 42, y: hazard.y - 30, width: 84, height: 60 };
+    }
+
+    if (hazard.kind === "bane-wave") {
+      return hazard.active
+        ? { x: hazard.x - hazard.width / 2, y: hazard.y - hazard.height, width: hazard.width, height: hazard.height }
+        : null;
+    }
+
+    if (hazard.kind === "riddler-laser") {
+      return hazard.active && hazard.activeTime > 0
+        ? { x: hazard.x, y: hazard.y - hazard.height / 2, width: hazard.width, height: hazard.height }
+        : null;
+    }
+
+    if (
+      (hazard.kind === "riddler-orb" || hazard.kind === "penguin-missile") &&
+      hazard.delay > 0
+    ) return null;
+
+    if (hazard.kind === "penguin-bot") {
+      return {
+        x: hazard.x - hazard.width / 2,
+        y: hazard.y - hazard.height / 2,
+        width: hazard.width,
+        height: hazard.height,
+      };
+    }
+
+    if (hazard.radius !== undefined) {
+      return {
+        x: hazard.x - hazard.radius,
+        y: hazard.y - hazard.radius,
+        width: hazard.radius * 2,
+        height: hazard.radius * 2,
+      };
+    }
+    return null;
+  }
+
   checkCombatCollisions(playerBox) {
+    if (
+      this.joker?.kind === "bane" &&
+      this.joker.attackMode === "bane-charge"
+    ) {
+      const baneBox = {
+        x: this.joker.x - 34,
+        y: this.joker.feet - 94,
+        width: 68,
+        height: 86,
+      };
+      if (this.overlaps(playerBox, baneBox)) {
+        this.finishRun();
+        return;
+      }
+    }
+
     for (const bomb of this.bombs) {
       if (bomb.harmless) continue;
       if (bomb.exploded) {
@@ -816,13 +1249,8 @@ class RooftopGame {
         continue;
       }
 
-      const bombBox = {
-        x: bomb.x - bomb.radius,
-        y: bomb.y - bomb.radius,
-        width: bomb.radius * 2,
-        height: bomb.radius * 2,
-      };
-      if (this.overlaps(playerBox, bombBox)) {
+      const bombBox = this.hazardCollisionBox(bomb);
+      if (bombBox && this.overlaps(playerBox, bombBox)) {
         this.finishRun();
         return;
       }
@@ -1270,29 +1698,195 @@ class RooftopGame {
 
   drawBombs() {
     const context = this.context;
-    this.bombs.forEach((bomb) => {
-      if (bomb.exploded) {
-        const progress = 1 - this.clamp(bomb.explosionTime / 0.34, 0, 1);
+    this.bombs.forEach((hazard) => {
+      if (hazard.exploded) {
+        const progress = 1 - this.clamp(hazard.explosionTime / 0.34, 0, 1);
         const radius = 14 + progress * 58;
-        const blast = context.createRadialGradient(bomb.x, bomb.y, 2, bomb.x, bomb.y, radius);
-        blast.addColorStop(0, bomb.harmless ? "rgba(190,255,245,.9)" : "rgba(255,245,188,.98)");
-        blast.addColorStop(0.28, bomb.harmless ? "rgba(91,240,218,.5)" : "rgba(255,126,55,.68)");
+        const blast = context.createRadialGradient(hazard.x, hazard.y, 2, hazard.x, hazard.y, radius);
+        blast.addColorStop(0, hazard.harmless ? "rgba(190,255,245,.9)" : "rgba(255,245,188,.98)");
+        blast.addColorStop(0.28, hazard.harmless ? "rgba(91,240,218,.5)" : "rgba(255,126,55,.68)");
         blast.addColorStop(1, "rgba(255,55,90,0)");
         context.fillStyle = blast;
         context.beginPath();
-        context.arc(bomb.x, bomb.y, radius, 0, Math.PI * 2);
+        context.arc(hazard.x, hazard.y, radius, 0, Math.PI * 2);
         context.fill();
         return;
       }
 
+      if (hazard.kind === "joker-gas") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        if (hazard.active) {
+          context.globalAlpha = 0.36;
+          context.shadowColor = "#62ef7b";
+          context.shadowBlur = 14;
+          for (let puff = 0; puff < 7; puff += 1) {
+            const angle = puff * 1.73 + this.elapsed * 0.7;
+            const x = Math.cos(angle) * (15 + (puff % 3) * 8);
+            const y = Math.sin(angle) * 12 - 7 - (puff % 2) * 9;
+            context.fillStyle = puff % 2 ? "#62d66d" : "#9aef65";
+            context.beginPath();
+            context.arc(x, y, 18 + (puff % 3) * 4, 0, Math.PI * 2);
+            context.fill();
+          }
+        } else {
+          context.rotate(hazard.rotation);
+          context.fillStyle = "#27392c";
+          context.fillRect(-8, -12, 16, 24);
+          context.strokeStyle = "#77ef7d";
+          context.lineWidth = 2;
+          context.strokeRect(-8, -12, 16, 24);
+          context.fillStyle = "#bbff75";
+          context.fillRect(-3, -4, 6, 8);
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "bane-wave") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.strokeStyle = "#ef7654";
+        context.fillStyle = "rgba(239,118,84,.32)";
+        context.shadowColor = "#ef7654";
+        context.shadowBlur = 12;
+        if (!hazard.active) {
+          const pulse = 18 + Math.sin(this.elapsed * 18) * 7;
+          context.lineWidth = 4;
+          context.beginPath();
+          context.ellipse(0, -2, pulse * 1.7, pulse * 0.35, 0, 0, Math.PI * 2);
+          context.stroke();
+        } else {
+          context.beginPath();
+          context.moveTo(-31, 0);
+          context.lineTo(-20, -16);
+          context.lineTo(-9, -4);
+          context.lineTo(2, -27);
+          context.lineTo(13, -7);
+          context.lineTo(27, -20);
+          context.lineTo(31, 0);
+          context.closePath();
+          context.fill();
+          context.stroke();
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "riddler-orb") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.globalAlpha = hazard.delay > 0 ? 0.38 : 1;
+        context.shadowColor = "#72f08b";
+        context.shadowBlur = 15;
+        const glow = context.createRadialGradient(0, 0, 2, 0, 0, hazard.radius + 5);
+        glow.addColorStop(0, "#e7ff8a");
+        glow.addColorStop(0.4, "#5fe77c");
+        glow.addColorStop(1, "rgba(39,130,69,.2)");
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(0, 0, hazard.radius + 4, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = "#092717";
+        context.font = "700 20px 'Courier New', monospace";
+        context.textAlign = "center";
+        context.fillText("?", 0, 7);
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "riddler-laser") {
+        context.save();
+        const pulse = 0.45 + Math.sin(this.elapsed * 24) * 0.18;
+        context.globalAlpha = hazard.active ? 0.95 : pulse;
+        context.shadowColor = "#6fff8d";
+        context.shadowBlur = hazard.active ? 18 : 7;
+        context.fillStyle = hazard.active ? "#8dffa1" : "#3b9e55";
+        context.fillRect(hazard.x, hazard.y - (hazard.active ? 5 : 1), hazard.width, hazard.active ? 10 : 2);
+        for (let marker = 80; marker < hazard.width; marker += 120) {
+          context.fillStyle = "#dfff7d";
+          context.font = "700 15px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("?", marker, hazard.y - 9);
+        }
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "penguin-missile") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.rotate(-0.45 + Math.sin(hazard.rotation) * 0.08);
+        context.globalAlpha = hazard.delay > 0 ? 0.42 : 1;
+        context.shadowColor = "#76c8ff";
+        context.shadowBlur = 11;
+        context.fillStyle = "#263b53";
+        context.beginPath();
+        context.arc(0, 0, 13, Math.PI, 0);
+        context.lineTo(0, 2);
+        context.closePath();
+        context.fill();
+        context.strokeStyle = "#9bdcff";
+        context.lineWidth = 2;
+        context.stroke();
+        context.strokeStyle = "#8ea7b9";
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(0, 21);
+        context.stroke();
+        context.fillStyle = Math.sin(this.elapsed * 26) > 0 ? "#ffb04d" : "#ff5471";
+        context.beginPath();
+        context.moveTo(11, -4);
+        context.lineTo(23, 0);
+        context.lineTo(11, 4);
+        context.closePath();
+        context.fill();
+        context.restore();
+        return;
+      }
+
+      if (hazard.kind === "penguin-bot") {
+        context.save();
+        context.translate(hazard.x, hazard.y);
+        context.shadowColor = "#78c8ff";
+        context.shadowBlur = 8;
+        context.fillStyle = "#111a28";
+        context.beginPath();
+        context.ellipse(0, 0, 17, 20, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = "#dceff2";
+        context.beginPath();
+        context.ellipse(0, 4, 10, 13, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = "#e7a845";
+        context.beginPath();
+        context.moveTo(0, -7);
+        context.lineTo(9, -3);
+        context.lineTo(0, 0);
+        context.closePath();
+        context.fill();
+        context.fillStyle = Math.sin(this.elapsed * 20) > 0 ? "#ff4d6e" : "#6b2b3c";
+        context.fillRect(-4, 5, 8, 5);
+        context.strokeStyle = "#7b94aa";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(-9, 17);
+        context.lineTo(-12, 22);
+        context.moveTo(9, 17);
+        context.lineTo(12, 22);
+        context.stroke();
+        context.restore();
+        return;
+      }
+
       context.save();
-      context.translate(bomb.x, bomb.y);
-      context.rotate(bomb.rotation);
-      context.shadowColor = bomb.harmless ? "#64f4df" : "#ff466a";
+      context.translate(hazard.x, hazard.y);
+      context.rotate(hazard.rotation);
+      context.shadowColor = hazard.harmless ? "#64f4df" : "#ff466a";
       context.shadowBlur = 9;
       context.fillStyle = "#11101d";
       context.beginPath();
-      context.arc(0, 0, bomb.radius, 0, Math.PI * 2);
+      context.arc(0, 0, hazard.radius, 0, Math.PI * 2);
       context.fill();
       context.lineWidth = 3;
       context.strokeStyle = "#6c3a83";
@@ -1309,12 +1903,264 @@ class RooftopGame {
     });
   }
 
+  drawBane() {
+    const context = this.context;
+    const bane = this.joker;
+    const runCycle = Math.sin(this.elapsed * 11) * (bane.state === "entering" ? 5 : 2);
+    const charging = bane.attackMode === "bane-charge";
+
+    context.save();
+    context.translate(bane.x, bane.feet);
+    if (bane.state === "defeated") context.rotate(bane.rotation);
+    else if (charging) context.rotate(-0.1);
+    if (bane.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+
+    context.fillStyle = "rgba(0,0,0,.32)";
+    context.beginPath();
+    context.ellipse(0, 2, 37, 8, 0, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "#202731";
+    context.lineWidth = 13;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-13, -23);
+    context.lineTo(-17 - runCycle, -2);
+    context.moveTo(13, -23);
+    context.lineTo(18 + runCycle, -2);
+    context.stroke();
+
+    context.fillStyle = bane.hitFlash > 0 ? "#d9fff8" : "#3a403c";
+    context.beginPath();
+    context.moveTo(-29, -72);
+    context.quadraticCurveTo(0, -86, 30, -70);
+    context.lineTo(25, -20);
+    context.lineTo(-25, -20);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#5b3028";
+    context.fillRect(-26, -50, 52, 12);
+    context.fillStyle = "#7f8d74";
+    context.fillRect(-8, -67, 16, 39);
+
+    context.strokeStyle = bane.hitFlash > 0 ? "#d9fff8" : "#4b504b";
+    context.lineWidth = 15;
+    context.beginPath();
+    context.moveTo(-24, -64);
+    context.lineTo(-39 - (charging ? 12 : 0), -37);
+    context.moveTo(24, -64);
+    context.lineTo(40 + (charging ? 15 : 0), -39);
+    context.stroke();
+    context.fillStyle = "#1d2428";
+    context.beginPath();
+    context.arc(-42 - (charging ? 12 : 0), -35, 9, 0, Math.PI * 2);
+    context.arc(43 + (charging ? 15 : 0), -37, 9, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#c5b5a0";
+    context.beginPath();
+    context.arc(0, -88, 18, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#20262a";
+    context.beginPath();
+    context.moveTo(-18, -94);
+    context.lineTo(-11, -106);
+    context.lineTo(11, -106);
+    context.lineTo(18, -94);
+    context.lineTo(13, -77);
+    context.lineTo(5, -84);
+    context.lineTo(0, -76);
+    context.lineTo(-6, -84);
+    context.lineTo(-14, -77);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#e9f5e7";
+    context.fillRect(-10, -93, 6, 3);
+    context.fillRect(5, -93, 6, 3);
+
+    context.strokeStyle = "#62efac";
+    context.shadowColor = "#62efac";
+    context.shadowBlur = bane.attackMode?.startsWith("bane-charge") ? 13 : 6;
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(-16, -72);
+    context.quadraticCurveTo(-28, -86, -13, -100);
+    context.moveTo(16, -72);
+    context.quadraticCurveTo(28, -86, 13, -100);
+    context.stroke();
+    context.restore();
+  }
+
+  drawRiddler() {
+    const context = this.context;
+    const riddler = this.joker;
+    const runCycle = Math.sin(this.elapsed * 13) * (riddler.state === "entering" ? 5 : 1.5);
+    const casting = riddler.attackLabelTimer > 0;
+
+    context.save();
+    context.translate(riddler.x, riddler.feet);
+    if (riddler.state === "defeated") context.rotate(riddler.rotation);
+    if (riddler.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.28)";
+    context.beginPath();
+    context.ellipse(0, 2, 27, 7, 0, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "#173d29";
+    context.lineWidth = 9;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-7, -18);
+    context.lineTo(-10 - runCycle, -2);
+    context.moveTo(8, -18);
+    context.lineTo(12 + runCycle, -2);
+    context.stroke();
+
+    context.fillStyle = riddler.hitFlash > 0 ? "#eafff0" : "#23834e";
+    context.beginPath();
+    context.moveTo(-18, -62);
+    context.lineTo(18, -62);
+    context.lineTo(22, -17);
+    context.lineTo(-20, -17);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#131d18";
+    context.fillRect(-18, -43, 38, 5);
+    context.fillStyle = "#d9ff6d";
+    context.font = "700 24px 'Courier New', monospace";
+    context.textAlign = "center";
+    context.fillText("?", 1, -27);
+
+    context.strokeStyle = riddler.hitFlash > 0 ? "#eafff0" : "#2a9b59";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-14, -55);
+    context.lineTo(-27 - (casting ? 12 : 0), -38);
+    context.moveTo(15, -55);
+    context.lineTo(29, -39);
+    context.stroke();
+
+    context.fillStyle = "#d9ddd2";
+    context.beginPath();
+    context.arc(0, -73, 14, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#123822";
+    context.fillRect(-16, -88, 32, 7);
+    context.fillRect(-11, -102, 22, 15);
+    context.fillStyle = "#d9ff6d";
+    context.fillRect(-10, -90, 20, 3);
+    context.fillStyle = "#1b3022";
+    context.fillRect(-8, -76, 5, 3);
+    context.fillRect(4, -76, 5, 3);
+    context.strokeStyle = "#6be386";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(29, -39);
+    context.lineTo(34, -3);
+    context.arc(29, -1, 7, 0, Math.PI * 1.45);
+    context.stroke();
+    context.restore();
+  }
+
+  drawPenguin() {
+    const context = this.context;
+    const penguin = this.joker;
+    const runCycle = Math.sin(this.elapsed * 12) * (penguin.state === "entering" ? 4 : 1.3);
+    const attacking = penguin.attackLabelTimer > 0;
+
+    context.save();
+    context.translate(penguin.x, penguin.feet);
+    if (penguin.state === "defeated") context.rotate(penguin.rotation);
+    if (penguin.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+    context.fillStyle = "rgba(0,0,0,.3)";
+    context.beginPath();
+    context.ellipse(0, 2, 31, 7, 0, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "#161f2c";
+    context.lineWidth = 9;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-8, -13);
+    context.lineTo(-12 - runCycle, -1);
+    context.moveTo(8, -13);
+    context.lineTo(12 + runCycle, -1);
+    context.stroke();
+
+    context.fillStyle = penguin.hitFlash > 0 ? "#e8f7ff" : "#151d29";
+    context.beginPath();
+    context.ellipse(0, -35, 28, 34, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#e4edf1";
+    context.beginPath();
+    context.ellipse(0, -31, 15, 24, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#87394e";
+    context.beginPath();
+    context.moveTo(-9, -52);
+    context.lineTo(0, -45);
+    context.lineTo(9, -52);
+    context.lineTo(0, -57);
+    context.closePath();
+    context.fill();
+
+    context.fillStyle = "#d6d4cb";
+    context.beginPath();
+    context.arc(0, -65, 13, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#111927";
+    context.fillRect(-17, -81, 34, 7);
+    context.fillRect(-11, -99, 22, 19);
+    context.fillStyle = "#7aa4ce";
+    context.fillRect(-10, -83, 20, 3);
+    context.fillStyle = "#1f2730";
+    context.fillRect(-8, -68, 5, 3);
+    context.fillRect(4, -68, 5, 3);
+
+    context.strokeStyle = "#8da9bb";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(22, -48);
+    context.lineTo(34 + (attacking ? 11 : 0), -4);
+    context.stroke();
+    context.fillStyle = "#263b53";
+    context.beginPath();
+    context.arc(22, -49, 21, Math.PI, 0);
+    context.lineTo(22, -45);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "#9bdcff";
+    context.stroke();
+    context.restore();
+  }
+
   drawJoker() {
     if (!this.joker) return;
+    if (this.joker.kind === "bane") {
+      this.drawBane();
+      return;
+    }
+    if (this.joker.kind === "riddler") {
+      this.drawRiddler();
+      return;
+    }
+    if (this.joker.kind === "penguin") {
+      this.drawPenguin();
+      return;
+    }
     const context = this.context;
     const joker = this.joker;
     const runCycle = Math.sin(this.elapsed * 12) * (joker.state === "entering" ? 5 : 2);
-    const attackPose = joker.state !== "defeated" && joker.attackTimer < 0.32 ? 1 : 0;
+    const attackPose = joker.state !== "defeated" && joker.attackLabelTimer > 0 ? 1 : 0;
 
     context.save();
     context.translate(joker.x, joker.feet);
@@ -1431,18 +2277,19 @@ class RooftopGame {
     if (!this.joker) return;
     const context = this.context;
     const joker = this.joker;
+    const profile = VILLAIN_PROFILES[joker.kind];
     const healthRatio = this.clamp(joker.health / joker.maxHealth, 0, 1);
 
     context.save();
     context.fillStyle = "rgba(3,10,21,.84)";
-    context.strokeStyle = "rgba(129,244,218,.58)";
+    context.strokeStyle = profile.color;
     context.lineWidth = 1;
-    context.fillRect(328, 78, 304, 48);
-    context.strokeRect(328.5, 78.5, 303, 47);
+    context.fillRect(328, 78, 304, 58);
+    context.strokeRect(328.5, 78.5, 303, 57);
     context.fillStyle = "#d9fff8";
     context.font = "700 15px 'Courier New', monospace";
     context.textAlign = "left";
-    context.fillText("JOKER", 344, 98);
+    context.fillText(profile.name, 344, 98);
     context.fillStyle = "#7f9da0";
     context.font = "10px 'Courier New', monospace";
     context.textAlign = "right";
@@ -1454,18 +2301,29 @@ class RooftopGame {
       : (healthRatio > 0.28 ? "#e6c35d" : "#ff4d70");
     context.fillRect(344, 106, 272 * healthRatio, 8);
 
+    if (joker.attackLabelTimer > 0 && joker.state !== "defeated") {
+      context.globalAlpha = this.clamp(joker.attackLabelTimer / 0.2, 0, 1);
+      context.fillStyle = profile.color;
+      context.font = "700 10px 'Courier New', monospace";
+      context.textAlign = "center";
+      context.fillText(`// ${joker.attackLabel}`, 480, 129);
+      context.globalAlpha = 1;
+    }
+
     if (this.bossBannerTime > 0) {
       const alpha = this.clamp(this.bossBannerTime / 0.45, 0, 1);
       context.globalAlpha = alpha;
       context.fillStyle = "rgba(3,10,21,.8)";
       context.fillRect(292, 140, 376, 38);
-      context.strokeStyle = joker.state === "defeated" ? "#70ef91" : "#b26ade";
+      context.strokeStyle = joker.state === "defeated" ? "#70ef91" : profile.color;
       context.strokeRect(292.5, 140.5, 375, 37);
       context.fillStyle = joker.state === "defeated" ? "#92ffab" : "#f0e1ff";
       context.font = "700 13px 'Courier New', monospace";
       context.textAlign = "center";
       context.fillText(
-        joker.state === "defeated" ? "JOKER DEFEATED" : "JOKER INCOMING  •  SPACE / THROW",
+        joker.state === "defeated"
+          ? `${profile.name} DEFEATED`
+          : `${profile.name} INCOMING  •  SPACE / THROW`,
         480,
         164,
       );
