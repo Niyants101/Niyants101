@@ -83,6 +83,7 @@ class RooftopGame {
       down: false,
       jumpQueued: false,
       jumpHeld: false,
+      throwQueued: false,
     };
 
     this.highScore = Number(readStorage("niyant-rooftop-high-score", "0")) || 0;
@@ -140,9 +141,12 @@ class RooftopGame {
         return;
       }
 
-      if (["arrowup", "w", " "].includes(key)) {
+      if (["arrowup", "w"].includes(key)) {
         if (!event.repeat) this.controls.jumpQueued = true;
         this.controls.jumpHeld = true;
+      }
+      if (key === " " && this.phase === "playing" && !event.repeat) {
+        this.controls.throwQueued = true;
       }
       if (["arrowdown", "s"].includes(key)) this.controls.down = true;
       if (["arrowleft", "a"].includes(key)) this.controls.left = true;
@@ -151,7 +155,7 @@ class RooftopGame {
 
     window.addEventListener("keyup", (event) => {
       const key = event.key.toLowerCase();
-      if (["arrowup", "w", " "].includes(key)) this.controls.jumpHeld = false;
+      if (["arrowup", "w"].includes(key)) this.controls.jumpHeld = false;
       if (["arrowdown", "s"].includes(key)) this.controls.down = false;
       if (["arrowleft", "a"].includes(key)) this.controls.left = false;
       if (["arrowright", "d"].includes(key)) this.controls.right = false;
@@ -162,6 +166,7 @@ class RooftopGame {
       this.controls.right = false;
       this.controls.down = false;
       this.controls.jumpHeld = false;
+      this.controls.throwQueued = false;
     });
 
     document.querySelector("#restart").addEventListener("click", () => {
@@ -180,6 +185,8 @@ class RooftopGame {
         if (controlName === "jump") {
           this.controls.jumpQueued = true;
           this.controls.jumpHeld = true;
+        } else if (controlName === "throw") {
+          this.controls.throwQueued = true;
         } else {
           this.controls[controlName] = true;
         }
@@ -188,7 +195,7 @@ class RooftopGame {
       ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
         button.addEventListener(eventName, () => {
           if (controlName === "jump") this.controls.jumpHeld = false;
-          else this.controls[controlName] = false;
+          else if (controlName !== "throw") this.controls[controlName] = false;
         });
       });
     });
@@ -215,12 +222,21 @@ class RooftopGame {
     this.tutorialActions = { jump: false, duck: false, ramp: false, move: false };
     this.tutorialEnabled = readStorage(TUTORIAL_STORAGE_KEY) !== "1";
     this.particles = [];
+    this.batarangs = [];
+    this.bombs = [];
+    this.joker = null;
+    this.nextJokerDistance = 500;
+    this.jokerEncounters = 0;
+    this.bossBannerTime = 0;
+    this.throwCooldown = 0;
+    this.throwAnimation = 0;
 
     this.controls.left = false;
     this.controls.right = false;
     this.controls.down = false;
     this.controls.jumpQueued = false;
     this.controls.jumpHeld = false;
+    this.controls.throwQueued = false;
 
     this.player = {
       x: 220,
@@ -296,7 +312,7 @@ class RooftopGame {
     const steps = [
       {
         title: "JUMP",
-        keys: ["W", "↑", "SPACE"],
+        keys: ["W", "↑"],
         detail: "Jump over the construction barrier",
       },
       {
@@ -306,7 +322,7 @@ class RooftopGame {
       },
       {
         title: "RAMP JUMP",
-        keys: ["W", "↑", "SPACE"],
+        keys: ["W", "↑"],
         detail: "Jump near the top of the ramp to clear the gap",
       },
       {
@@ -533,6 +549,286 @@ class RooftopGame {
     this.particles = this.particles.filter((particle) => particle.life > 0);
   }
 
+  prepareBossArena() {
+    const arena = this.platforms.find((platform) => (
+      this.player.x >= platform.x && this.player.x <= platform.x + platform.width
+    ));
+    if (!arena) return null;
+
+    arena.width = Math.max(arena.width, 1900 - arena.x);
+    this.platforms = this.platforms
+      .filter((platform) => platform === arena || platform.x + platform.width < arena.x)
+      .sort((first, second) => first.x - second.x);
+    this.ramps = this.ramps.filter((ramp) => ramp.x + ramp.width < this.player.x - 90);
+    this.obstacles = this.obstacles.filter((obstacle) => (
+      obstacle.x + obstacle.width < this.player.x - 90
+    ));
+    this.fillWorld();
+    return arena;
+  }
+
+  spawnJoker() {
+    const arena = this.prepareBossArena();
+    const maxHealth = 7 + Math.min(this.jokerEncounters, 3);
+    this.jokerEncounters += 1;
+    this.nextJokerDistance += 500;
+    this.batarangs = [];
+    this.bombs = [];
+    this.joker = {
+      x: 1040,
+      targetX: 730,
+      feet: arena?.y ?? 410,
+      health: maxHealth,
+      maxHealth,
+      state: "entering",
+      attackTimer: 0.82,
+      hitFlash: 0,
+      defeatTimer: 0,
+      velocityY: 0,
+      rotation: 0,
+    };
+    this.bossBannerTime = 3.2;
+    this.phaseNode.textContent = "JOKER ENCOUNTER";
+  }
+
+  throwBatarang() {
+    if (this.throwCooldown > 0 || this.phase !== "playing") return;
+    this.batarangs.push({
+      x: this.player.x + 28,
+      y: this.player.feet - 46 + this.player.duckAmount * 12,
+      velocityX: 660,
+      rotation: 0,
+      life: 1.55,
+    });
+    this.throwCooldown = 0.24;
+    this.throwAnimation = 0.18;
+  }
+
+  throwJokerBomb() {
+    if (!this.joker || this.joker.state === "defeated") return;
+    const variation = this.random(this.elapsed * 9 + this.jokerEncounters * 17);
+    this.bombs.push({
+      x: this.joker.x - 23,
+      y: this.joker.feet - 55,
+      velocityX: -245 - variation * 70,
+      velocityY: -285 - variation * 70,
+      radius: 12,
+      rotation: 0,
+      landed: false,
+      fuse: 2.25,
+      exploded: false,
+      explosionTime: 0,
+      harmless: false,
+    });
+  }
+
+  explodeBomb(bomb, harmless = bomb.harmless) {
+    if (bomb.exploded) return;
+    bomb.exploded = true;
+    bomb.harmless = harmless;
+    bomb.explosionTime = 0.34;
+    bomb.velocityX = 0;
+    bomb.velocityY = 0;
+    this.spawnDust(bomb.x, bomb.y, 18, harmless ? "#72f4df" : "#ff9d4d");
+  }
+
+  defeatJoker() {
+    if (!this.joker || this.joker.state === "defeated") return;
+    this.joker.state = "defeated";
+    this.joker.defeatTimer = 1.35;
+    this.joker.velocityY = -330;
+    this.joker.rotation = 0;
+    this.bossBannerTime = 1.7;
+    this.phaseNode.textContent = "TARGET DOWN";
+    this.bombs.forEach((bomb) => {
+      bomb.harmless = true;
+      this.explodeBomb(bomb, true);
+    });
+  }
+
+  hitJoker() {
+    if (!this.joker || this.joker.state === "defeated" || this.joker.hitFlash > 0) return;
+    this.joker.health -= 1;
+    this.joker.hitFlash = 0.12;
+    this.joker.x += 9;
+    this.spawnDust(this.joker.x - 12, this.joker.feet - 48, 10, "#75ff8f");
+    if (this.joker.health <= 0) this.defeatJoker();
+  }
+
+  updateBatarangs(delta) {
+    this.batarangs.forEach((batarang) => {
+      batarang.x += batarang.velocityX * delta;
+      batarang.rotation += delta * 18;
+      batarang.life -= delta;
+
+      if (
+        this.joker &&
+        this.joker.state !== "defeated" &&
+        batarang.x >= this.joker.x - 28 &&
+        batarang.x <= this.joker.x + 30 &&
+        batarang.y >= this.joker.feet - 88 &&
+        batarang.y <= this.joker.feet - 10
+      ) {
+        this.hitJoker();
+        batarang.life = 0;
+        return;
+      }
+
+      const bomb = this.bombs.find((item) => (
+        !item.exploded &&
+        Math.hypot(batarang.x - item.x, batarang.y - item.y) < item.radius + 12
+      ));
+      if (bomb) {
+        this.explodeBomb(bomb, true);
+        batarang.life = 0;
+      }
+    });
+    this.batarangs = this.batarangs.filter((batarang) => (
+      batarang.life > 0 && batarang.x < 1030
+    ));
+  }
+
+  updateBombs(delta, speed) {
+    this.bombs.forEach((bomb) => {
+      if (bomb.exploded) {
+        bomb.explosionTime -= delta;
+        return;
+      }
+
+      bomb.rotation += delta * (bomb.landed ? 4 : 11);
+      if (!bomb.landed) {
+        const previousY = bomb.y;
+        bomb.x += bomb.velocityX * delta;
+        bomb.velocityY += 900 * delta;
+        bomb.y += bomb.velocityY * delta;
+        const surface = this.getSurface(bomb.x);
+        if (
+          surface &&
+          bomb.velocityY >= 0 &&
+          previousY + bomb.radius <= surface.y + 4 &&
+          bomb.y + bomb.radius >= surface.y
+        ) {
+          bomb.landed = true;
+          bomb.y = surface.y - bomb.radius;
+          bomb.velocityX = -speed;
+          bomb.velocityY = 0;
+        }
+      } else {
+        bomb.x -= speed * delta;
+        const surface = this.getSurface(bomb.x);
+        if (surface) bomb.y += (surface.y - bomb.radius - bomb.y) * (1 - Math.exp(-18 * delta));
+        bomb.fuse -= delta;
+        if (bomb.fuse <= 0) this.explodeBomb(bomb);
+      }
+    });
+    this.bombs = this.bombs.filter((bomb) => (
+      bomb.x > -100 && bomb.y < 620 && (!bomb.exploded || bomb.explosionTime > 0)
+    ));
+  }
+
+  updateJoker(delta) {
+    if (!this.joker) return;
+    this.joker.hitFlash = Math.max(0, this.joker.hitFlash - delta);
+
+    if (this.joker.state === "defeated") {
+      this.joker.defeatTimer -= delta;
+      this.joker.velocityY += 980 * delta;
+      this.joker.feet += this.joker.velocityY * delta;
+      this.joker.x += 280 * delta;
+      this.joker.rotation += delta * 5.8;
+      if (this.joker.defeatTimer <= 0 || this.joker.feet > 620) {
+        this.joker = null;
+        this.bombs = [];
+        this.phaseNode.textContent = "IN PURSUIT";
+      }
+      return;
+    }
+
+    const surface = this.getSurface(this.joker.x);
+    if (surface) {
+      this.joker.feet += (surface.y - this.joker.feet) * (1 - Math.exp(-15 * delta));
+    }
+
+    if (this.joker.state === "entering") {
+      this.joker.x += (this.joker.targetX - this.joker.x) * (1 - Math.exp(-2.7 * delta));
+      if (this.joker.x < 930) {
+        this.joker.attackTimer -= delta;
+        if (this.joker.attackTimer <= 0) {
+          this.throwJokerBomb();
+          this.joker.attackTimer = 1.8;
+        }
+      }
+      if (Math.abs(this.joker.x - this.joker.targetX) < 8) {
+        this.joker.state = "fighting";
+        this.joker.attackTimer = 0.72;
+      }
+      return;
+    }
+
+    const targetX = 720 + Math.sin(this.elapsed * 0.9) * 34;
+    this.joker.x += (targetX - this.joker.x) * (1 - Math.exp(-2.4 * delta));
+    this.joker.attackTimer -= delta;
+    if (this.joker.attackTimer <= 0) {
+      this.throwJokerBomb();
+      const variation = this.random(this.elapsed * 13 + this.jokerEncounters * 7);
+      this.joker.attackTimer = 1.45 + variation * 0.85;
+    }
+  }
+
+  updateCombat(delta, speed) {
+    this.throwCooldown = Math.max(0, this.throwCooldown - delta);
+    this.throwAnimation = Math.max(0, this.throwAnimation - delta);
+    this.bossBannerTime = Math.max(0, this.bossBannerTime - delta);
+
+    if (this.controls.throwQueued) {
+      this.throwBatarang();
+      this.controls.throwQueued = false;
+    }
+
+    if (
+      !this.joker &&
+      !this.tutorialEnabled &&
+      this.player.grounded &&
+      !this.player.onRamp &&
+      this.distance >= this.nextJokerDistance
+    ) {
+      this.spawnJoker();
+    }
+
+    this.updateJoker(delta);
+    this.updateBatarangs(delta);
+    this.updateBombs(delta, speed);
+  }
+
+  checkCombatCollisions(playerBox) {
+    for (const bomb of this.bombs) {
+      if (bomb.harmless) continue;
+      if (bomb.exploded) {
+        const playerCenterX = playerBox.x + playerBox.width / 2;
+        const playerCenterY = playerBox.y + playerBox.height / 2;
+        if (
+          bomb.explosionTime > 0.1 &&
+          Math.hypot(playerCenterX - bomb.x, playerCenterY - bomb.y) < 62
+        ) {
+          this.finishRun();
+          return;
+        }
+        continue;
+      }
+
+      const bombBox = {
+        x: bomb.x - bomb.radius,
+        y: bomb.y - bomb.radius,
+        width: bomb.radius * 2,
+        height: bomb.radius * 2,
+      };
+      if (this.overlaps(playerBox, bombBox)) {
+        this.finishRun();
+        return;
+      }
+    }
+  }
+
   updateGame(delta) {
     const tutorialSpeedFactor = this.tutorialEnabled && this.tutorialStep < 4 ? 0.88 : 1;
     const speed = (218 + Math.min(this.distance * 0.072, 152)) * tutorialSpeedFactor;
@@ -627,6 +923,8 @@ class RooftopGame {
       }
     }
 
+    this.updateCombat(delta, speed);
+
     const collisionHeight = 69 - this.player.duckAmount * 31;
     const playerBox = {
       x: this.player.x - 11.5,
@@ -665,6 +963,8 @@ class RooftopGame {
       }
       break;
     }
+
+    if (this.phase === "playing") this.checkCombatCollisions(playerBox);
 
     if (this.player.feet > 635) this.finishRun();
 
@@ -968,6 +1268,211 @@ class RooftopGame {
     this.obstacles.forEach((obstacle) => this.drawObstacle(obstacle));
   }
 
+  drawBombs() {
+    const context = this.context;
+    this.bombs.forEach((bomb) => {
+      if (bomb.exploded) {
+        const progress = 1 - this.clamp(bomb.explosionTime / 0.34, 0, 1);
+        const radius = 14 + progress * 58;
+        const blast = context.createRadialGradient(bomb.x, bomb.y, 2, bomb.x, bomb.y, radius);
+        blast.addColorStop(0, bomb.harmless ? "rgba(190,255,245,.9)" : "rgba(255,245,188,.98)");
+        blast.addColorStop(0.28, bomb.harmless ? "rgba(91,240,218,.5)" : "rgba(255,126,55,.68)");
+        blast.addColorStop(1, "rgba(255,55,90,0)");
+        context.fillStyle = blast;
+        context.beginPath();
+        context.arc(bomb.x, bomb.y, radius, 0, Math.PI * 2);
+        context.fill();
+        return;
+      }
+
+      context.save();
+      context.translate(bomb.x, bomb.y);
+      context.rotate(bomb.rotation);
+      context.shadowColor = bomb.harmless ? "#64f4df" : "#ff466a";
+      context.shadowBlur = 9;
+      context.fillStyle = "#11101d";
+      context.beginPath();
+      context.arc(0, 0, bomb.radius, 0, Math.PI * 2);
+      context.fill();
+      context.lineWidth = 3;
+      context.strokeStyle = "#6c3a83";
+      context.stroke();
+      context.fillStyle = Math.sin(this.elapsed * 18) > 0 ? "#ff4966" : "#753044";
+      context.fillRect(-3, -4, 6, 7);
+      context.strokeStyle = "#82ef7b";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(5, -10);
+      context.quadraticCurveTo(10, -18, 15, -14);
+      context.stroke();
+      context.restore();
+    });
+  }
+
+  drawJoker() {
+    if (!this.joker) return;
+    const context = this.context;
+    const joker = this.joker;
+    const runCycle = Math.sin(this.elapsed * 12) * (joker.state === "entering" ? 5 : 2);
+    const attackPose = joker.state !== "defeated" && joker.attackTimer < 0.32 ? 1 : 0;
+
+    context.save();
+    context.translate(joker.x, joker.feet);
+    if (joker.state === "defeated") context.rotate(joker.rotation);
+    if (joker.hitFlash > 0) {
+      context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+      context.shadowColor = "white";
+      context.shadowBlur = 18;
+    }
+
+    context.fillStyle = "rgba(0,0,0,.28)";
+    context.beginPath();
+    context.ellipse(0, 2, 29, 7, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "#37224e";
+    context.lineWidth = 9;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-8, -18);
+    context.lineTo(-11 - runCycle, -2);
+    context.moveTo(8, -18);
+    context.lineTo(12 + runCycle, -2);
+    context.stroke();
+
+    context.fillStyle = joker.hitFlash > 0 ? "#d9fff8" : "#542b75";
+    context.beginPath();
+    context.moveTo(-21, -58);
+    context.lineTo(19, -58);
+    context.lineTo(24, -17);
+    context.lineTo(10, -10);
+    context.lineTo(1, -22);
+    context.lineTo(-12, -9);
+    context.lineTo(-24, -18);
+    context.closePath();
+    context.fill();
+
+    context.fillStyle = "#3e9f65";
+    context.beginPath();
+    context.moveTo(-7, -54);
+    context.lineTo(8, -54);
+    context.lineTo(5, -23);
+    context.lineTo(-4, -23);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#e6c54c";
+    context.fillRect(-2, -50, 5, 20);
+
+    context.strokeStyle = joker.hitFlash > 0 ? "#d9fff8" : "#613184";
+    context.lineWidth = 9;
+    context.beginPath();
+    context.moveTo(-16, -51);
+    context.lineTo(-31 - attackPose * 9, -34 - attackPose * 8);
+    context.moveTo(15, -51);
+    context.lineTo(27, -37);
+    context.stroke();
+
+    context.fillStyle = "#e5eee4";
+    context.beginPath();
+    context.arc(0, -70, 15, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#319456";
+    context.beginPath();
+    context.moveTo(-15, -76);
+    context.lineTo(-11, -89);
+    context.lineTo(-4, -82);
+    context.lineTo(1, -92);
+    context.lineTo(6, -82);
+    context.lineTo(14, -88);
+    context.lineTo(15, -73);
+    context.quadraticCurveTo(0, -82, -15, -76);
+    context.fill();
+    context.fillStyle = "#182025";
+    context.fillRect(-9, -73, 5, 3);
+    context.fillRect(5, -73, 5, 3);
+    context.strokeStyle = "#c93551";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(0, -66, 9, 0.15, Math.PI - 0.15);
+    context.stroke();
+    context.restore();
+  }
+
+  drawBatarangs() {
+    const context = this.context;
+    this.batarangs.forEach((batarang) => {
+      context.save();
+      context.translate(batarang.x, batarang.y);
+      context.rotate(batarang.rotation);
+      context.shadowColor = "#75f4df";
+      context.shadowBlur = 8;
+      context.fillStyle = "#172a39";
+      context.strokeStyle = "#75e5d5";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(-15, 0);
+      context.lineTo(-8, -7);
+      context.lineTo(-1, -3);
+      context.lineTo(0, -9);
+      context.lineTo(2, -3);
+      context.lineTo(9, -7);
+      context.lineTo(15, 0);
+      context.lineTo(7, 3);
+      context.lineTo(0, 1);
+      context.lineTo(-7, 3);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+  }
+
+  drawBossHud() {
+    if (!this.joker) return;
+    const context = this.context;
+    const joker = this.joker;
+    const healthRatio = this.clamp(joker.health / joker.maxHealth, 0, 1);
+
+    context.save();
+    context.fillStyle = "rgba(3,10,21,.84)";
+    context.strokeStyle = "rgba(129,244,218,.58)";
+    context.lineWidth = 1;
+    context.fillRect(328, 78, 304, 48);
+    context.strokeRect(328.5, 78.5, 303, 47);
+    context.fillStyle = "#d9fff8";
+    context.font = "700 15px 'Courier New', monospace";
+    context.textAlign = "left";
+    context.fillText("JOKER", 344, 98);
+    context.fillStyle = "#7f9da0";
+    context.font = "10px 'Courier New', monospace";
+    context.textAlign = "right";
+    context.fillText(`${Math.max(0, joker.health)} / ${joker.maxHealth}`, 616, 98);
+    context.fillStyle = "#171b2c";
+    context.fillRect(344, 106, 272, 8);
+    context.fillStyle = healthRatio > 0.55
+      ? "#70ef91"
+      : (healthRatio > 0.28 ? "#e6c35d" : "#ff4d70");
+    context.fillRect(344, 106, 272 * healthRatio, 8);
+
+    if (this.bossBannerTime > 0) {
+      const alpha = this.clamp(this.bossBannerTime / 0.45, 0, 1);
+      context.globalAlpha = alpha;
+      context.fillStyle = "rgba(3,10,21,.8)";
+      context.fillRect(292, 140, 376, 38);
+      context.strokeStyle = joker.state === "defeated" ? "#70ef91" : "#b26ade";
+      context.strokeRect(292.5, 140.5, 375, 37);
+      context.fillStyle = joker.state === "defeated" ? "#92ffab" : "#f0e1ff";
+      context.font = "700 13px 'Courier New', monospace";
+      context.textAlign = "center";
+      context.fillText(
+        joker.state === "defeated" ? "JOKER DEFEATED" : "JOKER INCOMING  •  SPACE / THROW",
+        480,
+        164,
+      );
+    }
+    context.restore();
+  }
+
   drawParticles() {
     const context = this.context;
     this.particles.forEach((particle) => {
@@ -982,6 +1487,9 @@ class RooftopGame {
     const context = this.context;
     const runCycle = grounded ? Math.sin(this.elapsed * 16) * motion * (1 - duckAmount) : 0.25;
     const capeWave = Math.sin(this.elapsed * 11) * 4 * motion;
+    const throwReach = this.throwAnimation > 0
+      ? Math.sin((this.throwAnimation / 0.18) * Math.PI) * 20
+      : 0;
 
     context.save();
     context.translate(x + duckAmount * 7, feet);
@@ -1024,7 +1532,7 @@ class RooftopGame {
     context.lineWidth = 8;
     context.beginPath();
     context.moveTo(11, -49);
-    context.lineTo(25 + runCycle * 4, -37);
+    context.lineTo(25 + runCycle * 4 + throwReach, -37 - throwReach * 0.22);
     context.stroke();
 
     context.fillStyle = "#0b1628";
@@ -1116,6 +1624,8 @@ class RooftopGame {
     this.drawPlatforms();
     this.drawRamps();
     this.drawObstacles();
+    this.drawBombs();
+    this.drawJoker();
 
     if (this.phase === "intro") this.drawIntro();
     else {
@@ -1127,6 +1637,7 @@ class RooftopGame {
       );
     }
 
+    this.drawBatarangs();
     this.drawParticles();
 
     const bottomShade = context.createLinearGradient(0, 440, 0, 540);
@@ -1134,6 +1645,7 @@ class RooftopGame {
     bottomShade.addColorStop(1, "rgba(1, 5, 12, .72)");
     context.fillStyle = bottomShade;
     context.fillRect(0, 440, 960, 100);
+    this.drawBossHud();
   }
 
   frame(now) {

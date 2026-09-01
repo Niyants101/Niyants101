@@ -34,6 +34,34 @@ input { font: inherit; }
   overflow: hidden;
 }
 
+.gate-profile-button {
+  position: fixed;
+  left: 26px;
+  top: 24px;
+  z-index: 7;
+  display: inline-flex;
+  height: 44px;
+  padding: 0 17px;
+  align-items: center;
+  border: 1px solid rgba(103, 245, 223, .48);
+  border-radius: 2px;
+  background: rgba(3, 15, 25, .68);
+  color: #8cf6e5;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: background .18s, color .18s, transform .18s;
+}
+
+.gate-profile-button:hover,
+.gate-profile-button:focus-visible {
+  background: var(--cyan);
+  color: #031015;
+  outline: none;
+  transform: translateX(-2px);
+}
+
 .city {
   position: absolute;
   inset: -5%;
@@ -229,6 +257,7 @@ input { font: inherit; }
 
 .gate.signal .flash { animation: reveal 1.15s ease-in-out forwards; }
 .gate.signal .terminal { animation: away .35s ease-in forwards; }
+.gate.signal .gate-profile-button { animation: away .35s ease-in forwards; }
 
 .runner {
   position: relative;
@@ -558,9 +587,9 @@ input { font: inherit; }
   bottom: 20px;
   z-index: 6;
   display: none;
-  grid-template-columns: 54px 1fr 1fr 54px;
+  grid-template-columns: 54px 1fr 1fr 1fr 54px;
   gap: 10px;
-  width: min(92vw, 460px);
+  width: min(95vw, 560px);
   transform: translateX(-50%);
 }
 
@@ -595,6 +624,7 @@ input { font: inherit; }
 
 @media (max-width: 640px) {
   .terminal { padding: 32px 24px 28px; }
+  .gate-profile-button { left: 14px; top: 14px; height: 38px; padding: 0 10px; font-size: 9px; }
   .code-row { grid-template-columns: 1fr; }
   .gate button { width: 100%; }
   .hud { inset: 14px 14px auto; }
