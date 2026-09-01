@@ -286,7 +286,7 @@ class RooftopGame {
     this.bombs = [];
     this.playerHearts = 3;
     this.maxPlayerHearts = 3;
-    this.meleeInvulnerability = 0;
+    this.bossInvulnerability = 0;
     this.damageFlash = 0;
     this.damageBannerTime = 0;
     this.joker = null;
@@ -297,6 +297,11 @@ class RooftopGame {
     this.bossBannerTime = 0;
     this.throwCooldown = 0;
     this.throwAnimation = 0;
+    this.maxBatarangCharges = 3;
+    this.batarangCharges = 3;
+    this.batarangRechargeInterval = 1.1;
+    this.batarangRechargeTimer = 0;
+    this.batarangEmptyFlash = 0;
 
     this.controls.left = false;
     this.controls.right = false;
@@ -358,6 +363,7 @@ class RooftopGame {
     this.phaseNode.textContent = "RUN ENDED";
     this.helpNode.classList.add("hidden");
     this.tutorialNode.classList.add("hidden");
+    this.updateHearts();
 
     const finalScore = Math.floor(this.distance);
     if (finalScore > this.highScore) {
@@ -374,19 +380,30 @@ class RooftopGame {
   updateHearts() {
     const fullHearts = Math.max(0, this.playerHearts);
     const emptyHearts = Math.max(0, this.maxPlayerHearts - fullHearts);
+    const bossFight = Boolean(
+      this.phase === "playing" &&
+      this.joker &&
+      this.joker.state !== "defeated"
+    );
     this.heartsNode.textContent = `${"♥ ".repeat(fullHearts)}${"♡ ".repeat(emptyHearts)}`.trim();
+    this.heartsNode.classList.toggle("visible", bossFight);
     this.heartsNode.classList.toggle("critical", fullHearts === 1);
     this.heartsNode.setAttribute(
       "aria-label",
-      `Batman armor: ${fullHearts} ${fullHearts === 1 ? "heart" : "hearts"}`,
+      `Batman health: ${fullHearts} ${fullHearts === 1 ? "heart" : "hearts"}`,
     );
   }
 
-  takeMeleeDamage() {
-    if (this.phase !== "playing" || this.meleeInvulnerability > 0) return false;
+  takeBossDamage() {
+    if (
+      this.phase !== "playing" ||
+      !this.joker ||
+      this.joker.state === "defeated" ||
+      this.bossInvulnerability > 0
+    ) return false;
 
     this.playerHearts = Math.max(0, this.playerHearts - 1);
-    this.meleeInvulnerability = 1.1;
+    this.bossInvulnerability = 1.1;
     this.damageFlash = 0.32;
     this.damageBannerTime = 1.05;
     this.player.x = this.clamp(this.player.x - 34, 108, 365);
@@ -701,6 +718,11 @@ class RooftopGame {
     this.nextJokerDistance += 500;
     this.batarangs = [];
     this.bombs = [];
+    this.playerHearts = this.maxPlayerHearts;
+    this.bossInvulnerability = 0;
+    this.batarangCharges = this.maxBatarangCharges;
+    this.batarangRechargeTimer = 0;
+    this.batarangEmptyFlash = 0;
     this.joker = {
       x: entryStyle === "drop" ? targetX : 1040,
       targetX,
@@ -730,10 +752,20 @@ class RooftopGame {
     };
     this.bossBannerTime = 3.2;
     this.phaseNode.textContent = `${profile.name} ENCOUNTER`;
+    this.updateHearts();
   }
 
   throwBatarang() {
     if (this.throwCooldown > 0 || this.phase !== "playing") return;
+    if (this.batarangCharges <= 0) {
+      this.batarangEmptyFlash = 0.45;
+      this.throwCooldown = 0.12;
+      return;
+    }
+    this.batarangCharges -= 1;
+    if (this.batarangRechargeTimer <= 0) {
+      this.batarangRechargeTimer = this.batarangRechargeInterval;
+    }
     this.batarangs.push({
       x: this.player.x + 28,
       y: this.player.feet - 46 + this.player.duckAmount * 12,
@@ -741,7 +773,7 @@ class RooftopGame {
       rotation: 0,
       life: 1.55,
     });
-    this.throwCooldown = 0.24;
+    this.throwCooldown = 0.36;
     this.throwAnimation = 0.18;
   }
 
@@ -843,15 +875,14 @@ class RooftopGame {
   }
 
   spawnRiddlerLaser() {
-    const high = this.combatRandom() > 0.5;
     this.bombs.push({
       kind: "riddler-laser",
       x: 0,
-      y: this.joker.feet - (high ? 61 : 20),
-      yOffset: high ? 61 : 20,
+      y: this.joker.feet - 21,
+      yOffset: 21,
       width: Math.max(0, this.joker.x - 35),
-      height: 9,
-      telegraph: 0.9,
+      height: 11,
+      telegraph: 0.95,
       active: false,
       activeTime: 0.48,
       life: 1.38,
@@ -953,7 +984,7 @@ class RooftopGame {
         this.joker.attackLabel = "QUESTION VOLLEY";
         this.spawnRiddlerOrbs();
       } else if (attack === 1) {
-        this.joker.attackLabel = "RIDDLE BEAM";
+        this.joker.attackLabel = "LOW BEAM  •  JUMP";
         this.spawnRiddlerLaser();
       } else {
         this.joker.attackLabel = VILLAIN_PROFILES.riddler.meleeLabel;
@@ -999,6 +1030,7 @@ class RooftopGame {
     this.joker.rotation = 0;
     this.bossBannerTime = 1.7;
     this.phaseNode.textContent = "TARGET DOWN";
+    this.updateHearts();
     this.bombs.forEach((bomb) => {
       bomb.harmless = true;
       this.explodeBomb(bomb, true);
@@ -1204,6 +1236,7 @@ class RooftopGame {
         this.joker = null;
         this.bombs = [];
         this.phaseNode.textContent = "IN PURSUIT";
+        this.updateHearts();
       }
       return;
     }
@@ -1288,9 +1321,20 @@ class RooftopGame {
     this.throwCooldown = Math.max(0, this.throwCooldown - delta);
     this.throwAnimation = Math.max(0, this.throwAnimation - delta);
     this.bossBannerTime = Math.max(0, this.bossBannerTime - delta);
-    this.meleeInvulnerability = Math.max(0, this.meleeInvulnerability - delta);
+    this.bossInvulnerability = Math.max(0, this.bossInvulnerability - delta);
     this.damageFlash = Math.max(0, this.damageFlash - delta);
     this.damageBannerTime = Math.max(0, this.damageBannerTime - delta);
+    this.batarangEmptyFlash = Math.max(0, this.batarangEmptyFlash - delta);
+
+    if (this.batarangCharges < this.maxBatarangCharges) {
+      this.batarangRechargeTimer -= delta;
+      if (this.batarangRechargeTimer <= 0) {
+        this.batarangCharges += 1;
+        this.batarangRechargeTimer = this.batarangCharges < this.maxBatarangCharges
+          ? this.batarangRechargeInterval
+          : 0;
+      }
+    }
 
     if (this.controls.throwQueued) {
       this.throwBatarang();
@@ -1381,12 +1425,12 @@ class RooftopGame {
       const meleeBox = this.meleeCollisionBox(this.joker);
       if (this.overlaps(playerBox, meleeBox)) {
         this.joker.meleeConnected = true;
-        this.takeMeleeDamage();
+        this.takeBossDamage();
         if (this.phase !== "playing") return;
       }
     }
 
-    if (this.meleeInvulnerability > 0) return;
+    if (this.bossInvulnerability > 0) return;
 
     for (const bomb of this.bombs) {
       if (bomb.harmless) continue;
@@ -1397,7 +1441,7 @@ class RooftopGame {
           bomb.explosionTime > 0.1 &&
           Math.hypot(playerCenterX - bomb.x, playerCenterY - bomb.y) < 62
         ) {
-          this.finishRun();
+          if (this.takeBossDamage()) bomb.harmless = true;
           return;
         }
         continue;
@@ -1405,7 +1449,14 @@ class RooftopGame {
 
       const bombBox = this.hazardCollisionBox(bomb);
       if (bombBox && this.overlaps(playerBox, bombBox)) {
-        this.finishRun();
+        if (this.takeBossDamage()) {
+          bomb.harmless = true;
+          if (bomb.kind === "riddler-laser") {
+            bomb.x = playerBox.x + playerBox.width / 2;
+            bomb.width = 0;
+          }
+          this.explodeBomb(bomb, true);
+        }
         return;
       }
     }
@@ -1957,11 +2008,11 @@ class RooftopGame {
         context.shadowBlur = hazard.active ? 18 : 7;
         context.fillStyle = hazard.active ? "#8dffa1" : "#3b9e55";
         context.fillRect(hazard.x, hazard.y - (hazard.active ? 5 : 1), hazard.width, hazard.active ? 10 : 2);
-        for (let marker = 80; marker < hazard.width; marker += 120) {
+        for (let marker = 105; marker < hazard.width; marker += 150) {
           context.fillStyle = "#dfff7d";
-          context.font = "700 15px 'Courier New', monospace";
+          context.font = "700 11px 'Courier New', monospace";
           context.textAlign = "center";
-          context.fillText("?", marker, hazard.y - 9);
+          context.fillText("↑ JUMP", marker, hazard.y - 10);
         }
         context.restore();
         return;
@@ -2493,16 +2544,40 @@ class RooftopGame {
       : (healthRatio > 0.28 ? "#e6c35d" : "#ff4d70");
     context.fillRect(344, 106, 272 * healthRatio, 8);
 
+    const chargeColor = this.batarangEmptyFlash > 0 ? "#ff5870" : "#73ead8";
+    context.fillStyle = chargeColor;
+    context.font = "700 8px 'Courier New', monospace";
+    context.textAlign = "left";
+    context.fillText(this.batarangCharges === 0 ? "WAIT" : "BATS", 344, 131);
+    for (let charge = 0; charge < this.maxBatarangCharges; charge += 1) {
+      const x = 374 + charge * 13;
+      context.strokeStyle = chargeColor;
+      context.lineWidth = 1;
+      context.strokeRect(x + 0.5, 122.5, 8, 8);
+      if (charge < this.batarangCharges) {
+        context.fillStyle = chargeColor;
+        context.fillRect(x + 2, 124, 5, 5);
+      } else if (charge === this.batarangCharges && this.batarangRechargeTimer > 0) {
+        const recharge = 1 - this.clamp(
+          this.batarangRechargeTimer / this.batarangRechargeInterval,
+          0,
+          1,
+        );
+        context.fillStyle = "rgba(115,234,216,.62)";
+        context.fillRect(x + 2, 129 - recharge * 5, 5, recharge * 5);
+      }
+    }
+
     if ((joker.attackLabelTimer > 0 || enraged) && joker.state !== "defeated") {
       context.globalAlpha = joker.attackLabelTimer > 0
         ? this.clamp(joker.attackLabelTimer / 0.2, 0, 1)
         : 0.62 + Math.sin(this.elapsed * 7) * 0.2;
       context.fillStyle = enraged ? "#ff667d" : profile.color;
-      context.font = "700 10px 'Courier New', monospace";
-      context.textAlign = "center";
+      context.font = "700 9px 'Courier New', monospace";
+      context.textAlign = "right";
       context.fillText(
         joker.attackLabelTimer > 0 ? `// ${joker.attackLabel}` : "// ENRAGED",
-        480,
+        616,
         129,
       );
       context.globalAlpha = 1;
@@ -2551,7 +2626,7 @@ class RooftopGame {
       context.font = "700 12px 'Courier New', monospace";
       context.textAlign = "center";
       context.fillText(
-        `ARMOR HIT  •  ${this.playerHearts} ${this.playerHearts === 1 ? "HEART" : "HEARTS"} LEFT`,
+        `BOSS HIT  •  ${this.playerHearts} ${this.playerHearts === 1 ? "HEART" : "HEARTS"} LEFT`,
         480,
         210,
       );
@@ -2580,7 +2655,7 @@ class RooftopGame {
     context.save();
     if (
       this.phase === "playing" &&
-      this.meleeInvulnerability > 0 &&
+      this.bossInvulnerability > 0 &&
       Math.sin(this.elapsed * 42) > -0.1
     ) context.globalAlpha = 0.38;
     context.translate(x + duckAmount * 7, feet);

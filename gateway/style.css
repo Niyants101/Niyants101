@@ -147,7 +147,7 @@ input { font: inherit; }
   display: block;
   margin-bottom: 8px;
   color: #71969d;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: .22em;
 }
 
@@ -202,10 +202,10 @@ input { font: inherit; }
 }
 
 .message {
-  min-height: 13px;
-  margin: 12px 0 0;
+  min-height: 18px;
+  margin: 14px 0 0;
   color: #52747b;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: .2em;
 }
 
@@ -307,32 +307,32 @@ input { font: inherit; }
 }
 
 .hearts {
-  min-width: 126px;
-  padding: 7px 11px 8px;
+  min-width: 158px;
+  padding: 9px 14px 10px;
   border: 1px solid rgba(255, 88, 112, .38);
   border-radius: 2px;
   background: rgba(18, 7, 18, .72);
   color: #ff5870;
-  font: 700 24px/1 "Courier New", monospace;
-  letter-spacing: .08em;
+  font: 700 35px/1 "Courier New", monospace;
+  letter-spacing: .04em;
   text-align: center;
   text-shadow: 0 0 12px rgba(255, 73, 104, .82);
   backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-5px) scale(.9);
+  transition: opacity .25s, transform .25s, visibility .25s;
 }
 
-.hearts::before {
-  content: "ARMOR";
-  margin-right: 9px;
-  color: #b98892;
-  font-size: 8px;
-  letter-spacing: .18em;
-  vertical-align: 3px;
-  text-shadow: none;
+.hearts.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 
 .hearts.critical {
   border-color: rgba(255, 76, 101, .8);
-  animation: armor-critical .5s ease-in-out infinite alternate;
+  animation: heart-critical .5s ease-in-out infinite alternate;
 }
 
 .return-button {
@@ -649,7 +649,7 @@ input { font: inherit; }
 @keyframes helper { 0%, 65% { opacity: 1; } 100% { opacity: .25; } }
 @keyframes tutorial-in { from { opacity: 0; transform: translate(-50%, 8px) scale(.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
 @keyframes gameover { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-@keyframes armor-critical { to { color: #fff0f2; box-shadow: 0 0 24px rgba(255, 57, 88, .28); } }
+@keyframes heart-critical { to { color: #fff0f2; box-shadow: 0 0 24px rgba(255, 57, 88, .28); } }
 
 @media (hover: none), (pointer: coarse) {
   .runner.playing .touch-controls { display: grid; }
@@ -666,8 +666,7 @@ input { font: inherit; }
   .hud { inset: 14px 14px auto; }
   .return-button { height: 38px; padding: 0 10px; font-size: 9px; }
   .player-status { gap: 6px; }
-  .hearts { min-width: 104px; padding: 6px 8px; font-size: 19px; }
-  .hearts::before { margin-right: 5px; font-size: 7px; }
+  .hearts { min-width: 124px; padding: 7px 9px; font-size: 28px; }
   .run-title span { font-size: 20px; }
   .run-title small, .high-score small { font-size: 9px; }
   .high-score strong { font-size: 28px; }
