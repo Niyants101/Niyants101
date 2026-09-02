@@ -260,6 +260,8 @@ input { font: inherit; }
 .gate.signal .gate-profile-button { animation: away .35s ease-in forwards; }
 
 .runner {
+  --stage-width: min(100vw, calc(100svh * 1.7778));
+  --stage-pad: clamp(14px, 2vw, 30px);
   position: relative;
   display: grid;
   width: 100vw;
@@ -284,18 +286,22 @@ input { font: inherit; }
 
 .runner-canvas {
   display: block;
-  width: min(100vw, calc(100svh * 1.7778));
+  width: var(--stage-width);
   height: min(100svh, calc(100vw * .5625));
   background: #020711;
 }
 
 .hud {
   position: fixed;
-  inset: 23px 30px auto;
+  left: 50%;
+  top: clamp(14px, 2.8svh, 23px);
   z-index: 5;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: start;
+  width: var(--stage-width);
+  padding: 0 var(--stage-pad);
+  transform: translateX(-50%);
   pointer-events: none;
   text-shadow: 0 2px 16px #000;
 }
@@ -370,7 +376,7 @@ input { font: inherit; }
 
 .run-title span {
   font-weight: 700;
-  font-size: clamp(24px, 3vw, 40px);
+  font-size: clamp(24px, min(3vw, 5svh), 40px);
   letter-spacing: .2em;
 }
 
@@ -387,7 +393,7 @@ input { font: inherit; }
 }
 
 .high-score strong {
-  font-size: clamp(34px, 4vw, 52px);
+  font-size: clamp(34px, min(4vw, 6.5svh), 52px);
   letter-spacing: .12em;
 }
 
@@ -409,7 +415,7 @@ input { font: inherit; }
 
 .distance strong {
   color: #eaffff;
-  font-size: clamp(32px, 4vw, 48px);
+  font-size: clamp(32px, min(4vw, 6svh), 48px);
   letter-spacing: .12em;
 }
 
@@ -428,22 +434,24 @@ input { font: inherit; }
 
 .tutorial {
   position: fixed;
-  left: 50%;
-  bottom: 88px;
+  left: auto;
+  right: calc(max(0px, 50vw - 88.89svh) + var(--stage-pad));
+  top: clamp(96px, 14svh, 130px);
+  bottom: auto;
   z-index: 6;
-  width: min(88vw, 470px);
-  padding: 21px 24px 19px;
-  transform: translateX(-50%);
+  width: min(340px, calc(var(--stage-width) - var(--stage-pad) - var(--stage-pad)));
+  padding: 15px 17px 14px;
+  transform: none;
   border: 1px solid rgba(103, 245, 223, .5);
   background: linear-gradient(135deg, rgba(3, 15, 27, .92), rgba(5, 24, 34, .82));
   box-shadow: 0 12px 46px #000a, inset 0 0 28px rgba(103, 245, 223, .05);
   backdrop-filter: blur(10px);
-  text-align: center;
+  text-align: left;
   animation: tutorial-in .3s ease-out;
 }
 
 .tutorial::before {
-  content: "";
+  content: none;
   position: absolute;
   left: 50%;
   top: -8px;
@@ -456,8 +464,10 @@ input { font: inherit; }
 }
 
 .tutorial small {
-  display: block;
-  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
   color: #638b92;
   font-size: 11px;
   letter-spacing: .28em;
@@ -466,57 +476,64 @@ input { font: inherit; }
 .tutorial strong {
   display: block;
   color: #eaffff;
-  font-size: 28px;
-  letter-spacing: .22em;
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: .13em;
 }
 
 .tutorial-keys {
   display: flex;
-  justify-content: center;
-  gap: 9px;
-  margin: 13px 0 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 9px 0 8px;
 }
 
 .tutorial-keys kbd {
   display: grid;
-  min-width: 42px;
-  height: 38px;
-  padding: 0 10px;
+  min-width: 34px;
+  height: 29px;
+  padding: 0 8px;
   place-items: center;
   border: 1px solid #6fe6d5;
   border-bottom-width: 3px;
   border-radius: 4px;
   background: rgba(103, 245, 223, .08);
   color: #8affec;
-  font: 700 14px Arial, sans-serif;
+  font: 700 12px Arial, sans-serif;
 }
 
 .tutorial p {
   margin: 0;
   color: #8ca8ae;
-  font: 15px Arial, sans-serif;
+  font: 13px/1.35 Arial, sans-serif;
 }
 
 .help {
   position: fixed;
-  left: 30px;
+  left: 50%;
   bottom: 25px;
   z-index: 4;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
   gap: 12px;
+  width: var(--stage-width);
+  padding: 0 var(--stage-pad);
+  transform: translateX(-50%);
   color: rgba(218, 250, 252, .9);
-  font-size: 15px;
+  font-size: clamp(11px, 1.6svh, 15px);
   letter-spacing: .12em;
   pointer-events: none;
 }
 
 .help span {
-  padding: 12px 15px;
+  padding: clamp(8px, 1.35svh, 12px) clamp(10px, 1vw, 15px);
   border: 1px solid rgba(103, 245, 223, .28);
   border-radius: 3px;
   background: rgba(3, 15, 25, .68);
   box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
   backdrop-filter: blur(8px);
+  white-space: nowrap;
 }
 
 .gameover {
@@ -619,23 +636,24 @@ input { font: inherit; }
 .touch-controls {
   position: fixed;
   left: 50%;
-  bottom: 20px;
+  bottom: max(10px, env(safe-area-inset-bottom));
   z-index: 6;
   display: none;
-  grid-template-columns: 54px 1fr 1fr 1fr 54px;
-  gap: 10px;
-  width: min(95vw, 560px);
+  grid-template-columns: clamp(42px, 9vw, 54px) repeat(3, minmax(0, 1fr)) clamp(42px, 9vw, 54px);
+  gap: clamp(5px, 1.4vw, 10px);
+  width: min(calc(100vw - 20px), 560px);
   transform: translateX(-50%);
 }
 
 .touch-controls button {
-  height: 56px;
-  padding: 0 10px;
+  height: clamp(44px, 8svh, 56px);
+  min-width: 0;
+  padding: 0 clamp(4px, 1.2vw, 10px);
   border: 1px solid rgba(103, 245, 223, .55);
   border-radius: 2px;
   background: rgba(3, 15, 25, .78);
   color: #84f6e5;
-  font-size: 15px;
+  font-size: clamp(11px, 2.8vw, 15px);
   backdrop-filter: blur(8px);
 }
 
@@ -647,15 +665,83 @@ input { font: inherit; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pulse { to { opacity: .42; } }
 @keyframes helper { 0%, 65% { opacity: 1; } 100% { opacity: .25; } }
-@keyframes tutorial-in { from { opacity: 0; transform: translate(-50%, 8px) scale(.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes tutorial-in { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: blur(0); } }
 @keyframes gameover { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes heart-critical { to { color: #fff0f2; box-shadow: 0 0 24px rgba(255, 57, 88, .28); } }
 
 @media (hover: none), (pointer: coarse) {
   .runner.playing .touch-controls { display: grid; }
-  .runner.playing .distance { bottom: 82px; }
-  .runner.playing .tutorial { bottom: 144px; }
+  .runner.playing .distance { bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(54px, 10svh, 70px)); }
+  .runner.playing .tutorial { bottom: auto; }
   .runner.playing .help { display: none; }
+}
+
+/* Compact desktop/laptop HUD: keeps controls clear of the centered distance. */
+@media (max-height: 900px) and (min-width: 641px),
+       (max-width: 1500px) and (min-width: 641px) {
+  .runner { --stage-pad: clamp(16px, 2vw, 26px); }
+
+  .help {
+    bottom: clamp(10px, 2svh, 18px);
+    grid-template-columns: repeat(2, minmax(0, 190px));
+    gap: 6px;
+    font-size: clamp(10px, 1.45svh, 12px);
+  }
+
+  .help span {
+    display: grid;
+    min-height: 31px;
+    padding: 6px 10px;
+    place-items: center;
+  }
+
+  .distance {
+    bottom: clamp(12px, 2.2svh, 20px);
+    gap: 9px;
+    font-size: clamp(9px, 1.45svh, 12px);
+  }
+
+  .return-button {
+    height: clamp(36px, 5.5svh, 44px);
+    padding: 0 clamp(11px, 1.3vw, 16px);
+    font-size: clamp(9px, 1.4svh, 11px);
+  }
+
+  .hearts {
+    min-width: 132px;
+    padding: 7px 11px 8px;
+    font-size: clamp(27px, 4.2svh, 33px);
+  }
+
+  .run-title small,
+  .high-score small {
+    font-size: clamp(9px, 1.4svh, 11px);
+  }
+}
+
+/* Very short laptop and landscape-tablet screens. */
+@media (max-height: 620px) and (min-width: 641px) {
+  .hud { top: 9px; }
+  .run-title span { font-size: clamp(20px, 5.3svh, 30px); }
+  .run-title small { display: none; }
+  .high-score strong { font-size: clamp(27px, 7svh, 38px); }
+  .help { grid-template-columns: repeat(2, minmax(0, 160px)); }
+  .help span { min-height: 26px; padding: 4px 7px; }
+  .distance strong { font-size: clamp(27px, 7svh, 38px); }
+  .tutorial { top: 62px; bottom: auto; width: min(310px, 44vw); padding: 10px 13px; }
+  .tutorial strong { font-size: 16px; }
+  .tutorial-keys { margin: 6px 0 5px; }
+  .tutorial-keys kbd { height: 25px; min-width: 30px; }
+  .tutorial p { font-size: 11px; }
+}
+
+/* Small keyboard-driven screens place the counter opposite the control panel. */
+@media (max-width: 1150px) and (hover: hover) and (pointer: fine) {
+  .distance {
+    left: auto;
+    right: calc(max(0px, 50vw - 88.89svh) + var(--stage-pad));
+    transform: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -663,19 +749,65 @@ input { font: inherit; }
   .gate-profile-button { left: 14px; top: 14px; height: 38px; padding: 0 10px; font-size: 9px; }
   .code-row { grid-template-columns: 1fr; }
   .gate button { width: 100%; }
-  .hud { inset: 14px 14px auto; }
+  .runner { --stage-pad: 12px; }
+  .hud {
+    top: 10px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "status score"
+      "title title";
+    row-gap: 7px;
+  }
+  .player-status { grid-area: status; }
+  .run-title { grid-area: title; }
+  .high-score { grid-area: score; }
   .return-button { height: 38px; padding: 0 10px; font-size: 9px; }
   .player-status { gap: 6px; }
   .hearts { min-width: 124px; padding: 7px 9px; font-size: 28px; }
-  .run-title span { font-size: 20px; }
+  .run-title span { font-size: clamp(16px, 5vw, 20px); letter-spacing: .14em; }
   .run-title small, .high-score small { font-size: 9px; }
-  .high-score strong { font-size: 28px; }
+  .high-score strong { font-size: clamp(22px, 7vw, 28px); }
   .distance { font-size: 10px; }
   .distance strong { font-size: 28px; }
-  .tutorial { padding: 16px; }
-  .tutorial strong { font-size: 23px; }
-  .tutorial p { font-size: 13px; }
+  .help {
+    bottom: 10px;
+    grid-template-columns: repeat(2, minmax(0, 145px));
+    gap: 4px;
+    font-size: 9px;
+  }
+  .help span { min-height: 28px; padding: 4px 6px; text-align: center; }
+  .tutorial {
+    left: 50%;
+    right: auto;
+    top: 96px;
+    bottom: auto;
+    width: min(calc(100vw - 24px), 370px);
+    padding: 11px 13px;
+    transform: translateX(-50%);
+  }
+  .tutorial strong { font-size: 16px; }
+  .tutorial small { font-size: 9px; }
+  .tutorial p { font-size: 11px; }
+  .tutorial-keys { margin: 6px 0 5px; }
+  .tutorial-keys kbd { height: 25px; min-width: 30px; padding: 0 6px; font-size: 11px; }
   .gameover { padding: 29px 24px 26px; }
+}
+
+@media (max-width: 640px) and (hover: hover) and (pointer: fine) {
+  .runner.playing .distance {
+    left: 50%;
+    right: auto;
+    bottom: 76px;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .runner.playing .distance {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(58px, 9svh, 72px));
+  }
+
+  .runner.playing .tutorial { top: 96px; bottom: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

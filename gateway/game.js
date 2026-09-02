@@ -6,7 +6,7 @@ const enter = document.querySelector("#enter");
 const message = document.querySelector("#message");
 
 let game = null;
-const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v2-complete";
+const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v3-complete";
 const VILLAIN_PROFILES = Object.freeze({
   joker: {
     name: "JOKER",
@@ -179,6 +179,7 @@ class RooftopGame {
     this.tutorialTitleNode = document.querySelector("#tutorialTitle");
     this.tutorialKeysNode = document.querySelector("#tutorialKeys");
     this.tutorialDetailNode = document.querySelector("#tutorialDetail");
+    this.tutorialProgressNode = document.querySelector("#tutorialProgress");
     this.overNode = document.querySelector("#gameover");
     this.finalScoreNode = document.querySelector("#finalScore");
     this.finalBestNode = document.querySelector("#finalBest");
@@ -200,6 +201,8 @@ class RooftopGame {
     this.fixedStep = 1 / 120;
     this.accumulator = 0;
     this.previousFrame = performance.now();
+    this.runSerial = 0;
+    this.lastRunSeed = null;
 
     this.bindControls();
     this.reset(false);
@@ -223,6 +226,93 @@ class RooftopGame {
       return value[0] / 4294967296;
     }
     return Math.random();
+  }
+
+  createRunSeed() {
+    this.runSerial += 1;
+    const randomPart = Math.floor(this.combatRandom() * 0x7fffffff);
+    const timePart = Date.now() >>> 0;
+    let seed = (
+      randomPart ^
+      timePart ^
+      Math.imul(this.runSerial, 0x9e3779b1)
+    ) >>> 0;
+
+    if (!seed || seed === this.lastRunSeed) {
+      seed = ((this.lastRunSeed ?? 1) + 0x6d2b79f5 + this.runSerial) >>> 0;
+    }
+
+    this.lastRunSeed = seed || this.runSerial;
+    return this.lastRunSeed;
+  }
+
+  buildOpeningCourse() {
+    const baseSeed = this.seed;
+    const colors = ["#101d35", "#17233d", "#1d2340", "#102d39", "#20233a"];
+    const openingWidth = 1480 + Math.floor(this.random(baseSeed + 1) * 181);
+    const openingEnd = -180 + openingWidth;
+    const openingGap = 88 + Math.floor(this.random(baseSeed + 2) * 61);
+    const secondWidth = 520 + Math.floor(this.random(baseSeed + 3) * 241);
+    const secondY = this.clamp(
+      410 + (this.random(baseSeed + 4) - 0.5) * 44,
+      382,
+      424,
+    );
+    const rampWidth = 136 + Math.floor(this.random(baseSeed + 5) * 19);
+    const rampHeight = 38 + Math.floor(this.random(baseSeed + 6) * 17);
+
+    this.platforms = [
+      {
+        x: -180,
+        width: openingWidth,
+        y: 410,
+        color: colors[Math.floor(this.random(baseSeed + 7) * colors.length)],
+        seed: baseSeed,
+      },
+      {
+        x: openingEnd + openingGap,
+        width: secondWidth,
+        y: secondY,
+        color: colors[Math.floor(this.random(baseSeed + 8) * colors.length)],
+        seed: baseSeed + 1,
+      },
+    ];
+
+    this.ramps = [{
+      x: openingEnd - rampWidth,
+      width: rampWidth,
+      baseY: 410,
+      height: rampHeight,
+      seed: baseSeed + 2,
+      ...(this.tutorialEnabled ? { tutorial: "ramp" } : {}),
+    }];
+
+    const firstX = 600 + Math.floor(this.random(baseSeed + 9) * 111);
+    const secondX = 925 + Math.floor(this.random(baseSeed + 10) * 91);
+
+    if (this.tutorialEnabled) {
+      this.obstacles = [
+        {
+          ...this.createObstacle("crate", firstX, 410, baseSeed + 3),
+          tutorial: "jump",
+        },
+        {
+          ...this.createObstacle("beam", secondX, 410, baseSeed + 4),
+          tutorial: "duck",
+        },
+      ];
+    } else {
+      const lowKinds = ["vent", "crate", "electric", "dish"];
+      const highKinds = ["beam", "drone"];
+      const firstKind = lowKinds[Math.floor(this.random(baseSeed + 11) * lowKinds.length)];
+      const secondKind = highKinds[Math.floor(this.random(baseSeed + 12) * highKinds.length)];
+      this.obstacles = [
+        this.createObstacle(firstKind, firstX, 410, baseSeed + 3),
+        this.createObstacle(secondKind, secondX, 410, baseSeed + 4),
+      ];
+    }
+
+    this.seed = (baseSeed + 37) >>> 0;
   }
 
   clamp(value, minimum, maximum) {
@@ -328,14 +418,22 @@ class RooftopGame {
     this.worldOffset = 0;
     this.elapsed = 0;
     this.introTime = 0;
-    this.seed = 20;
+    this.runSeed = this.createRunSeed();
+    this.skylineSeed = this.runSeed % 100000;
+    this.seed = this.runSeed;
     this.coyoteTime = 0.1;
     this.jumpBuffer = 0;
     this.lastHudUpdate = 0;
     this.tutorialGrace = 0;
     this.tutorialStep = 0;
     this.tutorialCompleteTimer = 0;
-    this.tutorialActions = { jump: false, duck: false, ramp: false, move: false };
+    this.tutorialActions = {
+      jump: false,
+      duck: false,
+      ramp: false,
+      move: false,
+      throw: false,
+    };
     this.tutorialEnabled = readStorage(TUTORIAL_STORAGE_KEY) !== "1";
     this.particles = [];
     this.batarangs = [];
@@ -378,19 +476,7 @@ class RooftopGame {
       onRamp: null,
     };
 
-    this.platforms = [
-      { x: -180, width: 1540, y: 410, color: "#13233c", seed: 2 },
-      { x: 1515, width: 650, y: 390, color: "#17233d", seed: 9 },
-    ];
-
-    this.ramps = [
-      { x: 1218, width: 142, baseY: 410, height: 44, seed: 3, tutorial: "ramp" },
-    ];
-
-    this.obstacles = [
-      { x: 680, y: 362, width: 58, height: 48, kind: "crate", tutorial: "jump", seed: 4 },
-      { x: 1010, y: 342, width: 108, height: 18, kind: "beam", tutorial: "duck", seed: 5 },
-    ];
+    this.buildOpeningCourse();
 
     this.fillWorld();
     this.scoreNode.textContent = "000000";
@@ -484,35 +570,46 @@ class RooftopGame {
       return;
     }
 
+    const touchInput = Boolean(
+      window.matchMedia?.("(hover: none), (pointer: coarse)").matches,
+    );
     const steps = [
       {
-        title: "JUMP",
-        keys: ["W", "↑"],
-        detail: "Jump over the construction barrier",
+        title: "JUMP HAZARDS",
+        keys: touchInput ? ["JUMP"] : ["W", "↑"],
+        detail: "Tap to clear crates, vents, and rooftop gaps.",
       },
       {
-        title: "DUCK",
-        keys: ["S", "↓"],
-        detail: "Hold the key to slide under the light beam",
+        title: "DUCK UNDER",
+        keys: touchInput ? ["DUCK"] : ["S", "↓"],
+        detail: "Hold to slide beneath beams and high attacks.",
       },
       {
-        title: "RAMP JUMP",
-        keys: ["W", "↑"],
-        detail: "Jump near the top of the ramp to clear the gap",
+        title: "LAUNCH FROM RAMPS",
+        keys: touchInput ? ["JUMP"] : ["W", "↑"],
+        detail: "Jump near a ramp's edge for extra distance.",
       },
       {
-        title: "MOVE",
-        keys: ["A", "←", "D", "→"],
-        detail: "Adjust your position smoothly across the rooftop",
+        title: "CHANGE POSITION",
+        keys: touchInput ? ["←", "→"] : ["A", "←", "D", "→"],
+        detail: "Move left or right to line up safer landings.",
+      },
+      {
+        title: "THROW BATARANG",
+        keys: touchInput ? ["THROW"] : ["SPACE"],
+        detail: "Use batarangs against bosses. Your three charges refill.",
       },
       {
         title: "TRAINING COMPLETE",
         keys: ["✓"],
-        detail: "Survive as long as you can",
+        detail: "Boss fights give Batman three hearts. Make them count.",
       },
     ];
 
     const step = steps[this.tutorialStep] ?? steps[steps.length - 1];
+    this.tutorialProgressNode.textContent = this.tutorialStep < 5
+      ? `${this.tutorialStep + 1} / 5`
+      : "READY";
     this.tutorialTitleNode.textContent = step.title;
     this.tutorialDetailNode.textContent = step.detail;
     this.tutorialKeysNode.replaceChildren(...step.keys.map((key) => {
@@ -525,12 +622,12 @@ class RooftopGame {
   }
 
   advanceTutorial() {
-    if (!this.tutorialEnabled || this.tutorialStep >= 4) return;
+    if (!this.tutorialEnabled || this.tutorialStep >= 5) return;
     this.tutorialStep += 1;
     this.updateTutorialDisplay();
 
-    if (this.tutorialStep === 4) {
-      this.tutorialCompleteTimer = 1.8;
+    if (this.tutorialStep === 5) {
+      this.tutorialCompleteTimer = 2.2;
       writeStorage(TUTORIAL_STORAGE_KEY, "1");
     }
   }
@@ -551,12 +648,18 @@ class RooftopGame {
       }
     } else if (this.tutorialStep === 2) {
       const ramp = this.ramps.find((item) => item.tutorial === "ramp");
-      if (ramp && ramp.x + ramp.width < this.player.x - 20) {
+      if (
+        ramp &&
+        ramp.x + ramp.width < this.player.x - 20 &&
+        this.tutorialActions.ramp
+      ) {
         this.advanceTutorial();
       }
     } else if (this.tutorialStep === 3 && this.tutorialActions.move) {
       this.advanceTutorial();
-    } else if (this.tutorialStep === 4) {
+    } else if (this.tutorialStep === 4 && this.tutorialActions.throw) {
+      this.advanceTutorial();
+    } else if (this.tutorialStep === 5) {
       this.tutorialCompleteTimer -= delta;
       if (this.tutorialCompleteTimer <= 0) {
         this.tutorialEnabled = false;
@@ -873,6 +976,9 @@ class RooftopGame {
       rotation: 0,
       life: 1.55,
     });
+    if (this.tutorialEnabled && this.tutorialStep === 4) {
+      this.tutorialActions.throw = true;
+    }
     this.throwCooldown = 0.36;
     this.throwAnimation = 0.18;
   }
@@ -2338,7 +2444,7 @@ class RooftopGame {
   }
 
   updateGame(delta) {
-    const tutorialSpeedFactor = this.tutorialEnabled && this.tutorialStep < 4 ? 0.88 : 1;
+    const tutorialSpeedFactor = this.tutorialEnabled && this.tutorialStep < 5 ? 0.88 : 1;
     const speed = (218 + Math.min(this.distance * 0.072, 152)) * tutorialSpeedFactor;
     this.distance += delta * speed * 0.078;
     this.scrollWorld(delta * speed);
@@ -2354,7 +2460,9 @@ class RooftopGame {
       this.player.velocityX *= 0.35;
     }
 
-    if (moveDirection !== 0) this.tutorialActions.move = true;
+    if (moveDirection !== 0 && this.tutorialStep === 3) {
+      this.tutorialActions.move = true;
+    }
 
     const previousRamp = this.player.onRamp;
     const support = this.getSurface(this.player.x);
@@ -2567,9 +2675,30 @@ class RooftopGame {
     }
     context.restore();
 
-    this.drawSkyline(this.worldOffset * 0.1, 248, 116, "#081326", 0.36, 2);
-    this.drawSkyline(this.worldOffset * 0.24, 314, 94, "#0b1930", 0.54, 5);
-    this.drawSkyline(this.worldOffset * 0.43, 355, 112, "#0d1d32", 0.72, 9);
+    this.drawSkyline(
+      this.worldOffset * 0.1,
+      248,
+      116,
+      "#081326",
+      0.36,
+      2 + this.skylineSeed,
+    );
+    this.drawSkyline(
+      this.worldOffset * 0.24,
+      314,
+      94,
+      "#0b1930",
+      0.54,
+      5 + this.skylineSeed,
+    );
+    this.drawSkyline(
+      this.worldOffset * 0.43,
+      355,
+      112,
+      "#0d1d32",
+      0.72,
+      9 + this.skylineSeed,
+    );
 
     context.save();
     context.strokeStyle = "rgba(128, 225, 235, 0.13)";
