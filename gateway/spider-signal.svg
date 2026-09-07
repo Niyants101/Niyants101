@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 128" role="img" aria-labelledby="title desc">
+  <title id="title">Spider Signal</title>
+  <desc id="desc">A glowing red and blue spider emblem.</desc>
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#273a72"/>
+      <stop offset="0.66" stop-color="#11142e"/>
+      <stop offset="1" stop-color="#070814"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff7387"/>
+      <stop offset="0.48" stop-color="#d92f4b"/>
+      <stop offset="1" stop-color="#567cff"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="68" cy="64" r="58" fill="#101224" opacity=".46"/>
+  <circle cx="68" cy="64" r="52" fill="url(#sky)" stroke="url(#ring)" stroke-width="5"/>
+  <g fill="none" stroke="#ef4761" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M68 35c-9 7-12 16-10 27l4 12h12l4-12c2-11-1-20-10-27z" fill="#d93450" stroke-width="3"/>
+    <path d="M62 73l-13 12m25-12l13 12M59 61L43 53m34 8l16-8M61 48L49 37m26 11l12-11" stroke-width="6"/>
+    <path d="M61 74L48 97m27-23l13 23M48 85l-12 2m52-2l12 2M43 53l-9-4m59 4l9-4M49 37l-6-8m44 8l6-8" stroke-width="4"/>
+  </g>
+  <g fill="#f6fbff" stroke="#11182a" stroke-width="2">
+    <path d="M61 47c-7 2-11 7-12 14 6-1 10-3 13-8z"/>
+    <path d="M75 47c7 2 11 7 12 14-6-1-10-3-13-8z"/>
+  </g>
+  <circle cx="68" cy="64" r="58" fill="none" stroke="#9fc7ff" stroke-width="2" opacity=".3"/>
+</svg>

@@ -20,6 +20,82 @@ body {
   overflow: hidden;
 }
 
+body[data-theme="spider"] {
+  --cyan: #ff5d73;
+  --green: #6ddfff;
+  --red: #ff405d;
+  background: #080613;
+}
+
+body[data-theme="spider"] .city {
+  filter: blur(13px) brightness(.43) saturate(.92) hue-rotate(-8deg);
+}
+
+body[data-theme="spider"] .veil {
+  background:
+    radial-gradient(circle at 50% 48%, transparent 0 12%, rgba(20, 4, 25, .52) 68%),
+    linear-gradient(rgba(12, 3, 18, .3), rgba(4, 3, 14, .78));
+}
+
+body[data-theme="spider"] .rain {
+  background: repeating-linear-gradient(112deg, transparent 0 34px, rgba(151, 191, 255, .65) 35px 36px, transparent 37px 65px);
+}
+
+body[data-theme="spider"] .terminal {
+  border-color: rgba(255, 93, 115, .5);
+  background: linear-gradient(145deg, rgba(22, 6, 25, .94), rgba(5, 8, 25, .86));
+  box-shadow: 0 0 0 1px rgba(255, 93, 115, .08), 0 26px 90px #000b, inset 0 0 50px rgba(255, 74, 101, .035);
+}
+
+body[data-theme="spider"] .logo,
+body[data-theme="spider"] .flash img {
+  filter: drop-shadow(0 0 16px rgba(255, 75, 103, .45));
+}
+
+body[data-theme="spider"] .runner,
+body[data-theme="spider"] .runner-canvas {
+  background: #080613;
+}
+
+body[data-theme="spider"] .tutorial {
+  border-color: rgba(255, 93, 115, .5);
+  background: linear-gradient(135deg, rgba(24, 6, 28, .93), rgba(8, 15, 39, .88));
+  box-shadow: 0 12px 46px #000a, inset 0 0 28px rgba(255, 93, 115, .05);
+}
+
+body[data-theme="spider"] .tutorial-keys kbd {
+  border-color: #ff6b7e;
+  background: rgba(255, 84, 109, .1);
+  color: #ffdce1;
+}
+
+body[data-theme="spider"] .run-title small,
+body[data-theme="spider"] .high-score small,
+body[data-theme="spider"] .intro-copy {
+  color: #ff7588;
+}
+
+body[data-theme="spider"] .gate-profile-button,
+body[data-theme="spider"] .return-button,
+body[data-theme="spider"] .help span,
+body[data-theme="spider"] .touch-controls button,
+body[data-theme="spider"] .gameover {
+  border-color: rgba(255, 93, 115, .48);
+}
+
+body[data-theme="spider"] .gate-profile-button,
+body[data-theme="spider"] .return-button,
+body[data-theme="spider"] .touch-controls button {
+  color: #ffb7c1;
+  background: rgba(24, 6, 25, .72);
+}
+
+body[data-theme="spider"] .gameover button {
+  border-color: #ff657b;
+  background: rgba(255, 91, 115, .1);
+  color: #ffb3be;
+}
+
 button,
 input { font: inherit; }
 

@@ -6,8 +6,10 @@ const enter = document.querySelector("#enter");
 const message = document.querySelector("#message");
 
 let game = null;
-const TUTORIAL_STORAGE_KEY = "niyant-rooftop-tutorial-v3-complete";
-const VILLAIN_PROFILES = Object.freeze({
+const GAME_THEME = document.body?.dataset?.theme === "spider" ? "spider" : "batman";
+const IS_SPIDER = GAME_THEME === "spider";
+
+const BATMAN_VILLAINS = {
   joker: {
     name: "JOKER",
     health: 12,
@@ -112,7 +114,121 @@ const VILLAIN_PROFILES = Object.freeze({
     meleeReach: 14,
     baseTarget: 750,
   },
+};
+
+const SPIDER_VILLAINS = {
+  joker: {
+    ...BATMAN_VILLAINS.joker,
+    name: "GREEN GOBLIN",
+    health: 13,
+    color: "#9aff57",
+    hitColor: "#ff9b3d",
+    meleeLabel: "GLIDER RUSH",
+    meleeSpeed: 650,
+  },
+  bane: {
+    ...BATMAN_VILLAINS.bane,
+    name: "VENOM",
+    health: 17,
+    color: "#d7e5ff",
+    hitColor: "#a66bff",
+    meleeLabel: "SYMBIOTE CHARGE",
+    meleeSpeed: 755,
+  },
+  riddler: {
+    ...BATMAN_VILLAINS.riddler,
+    name: "ELECTRO",
+    health: 14,
+    color: "#ffe75c",
+    hitColor: "#75dfff",
+    meleeLabel: "VOLT TACKLE",
+    meleeSpeed: 630,
+  },
+  penguin: {
+    ...BATMAN_VILLAINS.penguin,
+    name: "DOCTOR OCTOPUS",
+    health: 16,
+    color: "#f0a34f",
+    hitColor: "#c7d5e8",
+    meleeLabel: "TENTACLE LUNGE",
+    meleeReach: 30,
+  },
+  ivy: {
+    ...BATMAN_VILLAINS.ivy,
+    name: "SANDMAN",
+    health: 16,
+    color: "#d7aa68",
+    hitColor: "#fff0bd",
+    meleeLabel: "SAND HAMMER",
+    meleeSpeed: 650,
+  },
+  twoface: {
+    ...BATMAN_VILLAINS.twoface,
+    name: "MYSTERIO",
+    health: 15,
+    color: "#d27aff",
+    hitColor: "#72f7d0",
+    meleeLabel: "ILLUSION RUSH",
+  },
+  scarecrow: {
+    ...BATMAN_VILLAINS.scarecrow,
+    name: "LIZARD",
+    health: 16,
+    color: "#74d45b",
+    hitColor: "#e9ffb5",
+    meleeLabel: "TAIL SWIPE",
+    meleeSpeed: 690,
+  },
+  freeze: {
+    ...BATMAN_VILLAINS.freeze,
+    name: "VULTURE",
+    health: 17,
+    color: "#7fc46b",
+    hitColor: "#d8ffcc",
+    meleeLabel: "WING DIVE",
+    meleeSpeed: 640,
+  },
+};
+
+const THEME_CONFIGS = Object.freeze({
+  batman: {
+    heroName: "Batman",
+    projectile: "BATARANG",
+    projectileShort: "BATS",
+    signalAsset: "bat-signal.png",
+    highScoreKey: "niyant-rooftop-high-score",
+    tutorialKey: "niyant-rooftop-tutorial-v3-complete",
+    introLabel: "ROOFTOP APPROACH",
+    activeLabel: "IN PURSUIT",
+    villains: BATMAN_VILLAINS,
+    attackLabels: null,
+  },
+  spider: {
+    heroName: "Spider Man",
+    projectile: "WEB SHOT",
+    projectileShort: "WEBS",
+    signalAsset: "../spider-signal.svg",
+    highScoreKey: "niyant-webline-high-score",
+    tutorialKey: "niyant-webline-tutorial-v1-complete",
+    introLabel: "WEBLINE APPROACH",
+    activeLabel: "CITY PURSUIT",
+    villains: SPIDER_VILLAINS,
+    attackLabels: {
+      joker: ["PUMPKIN BOMB", "GOBLIN GAS", "RAZOR BATS", "GLIDER RUSH"],
+      bane: ["SYMBIOTE WAVE", "DEBRIS HURL", "TENDRIL QUAKE", "SYMBIOTE CHARGE"],
+      riddler: ["ARC VOLLEY", "FLOOR CURRENT", "VOLTAGE NODES", "VOLT TACKLE"],
+      penguin: ["ARM MISSILES", "OCTO DRONE", "STEEL CLAWS", "TENTACLE LUNGE"],
+      ivy: ["SAND SURGE", "SANDSTORM DROP", "GLASS SHARD VOLLEY", "SAND HAMMER"],
+      twoface: ["ILLUSION BURST", "SMOKE ORB", "PRISM RICOCHET", "ILLUSION RUSH"],
+      scarecrow: ["SEWER SWARM", "TOXIC SPIT", "CLAW STORM", "TAIL SWIPE"],
+      freeze: ["WING GUST", "FEATHER SPIKES", "PLASMA ORBS", "WING DIVE"],
+    },
+  },
 });
+
+const THEME = THEME_CONFIGS[GAME_THEME];
+const TUTORIAL_STORAGE_KEY = THEME.tutorialKey;
+const VILLAIN_PROFILES = Object.freeze(THEME.villains);
 
 function readStorage(key, fallback = "") {
   try {
@@ -194,9 +310,10 @@ class RooftopGame {
       throwQueued: false,
     };
 
-    this.highScore = Number(readStorage("niyant-rooftop-high-score", "0")) || 0;
+    this.highScore = Number(readStorage(THEME.highScoreKey, "0")) || 0;
     this.signal = new Image();
-    this.signal.src = "bat-signal.png";
+    this.signal.src = THEME.signalAsset;
+    this.introNode.textContent = THEME.introLabel;
     this.highNode.textContent = this.pad(this.highScore);
     this.fixedStep = 1 / 120;
     this.accumulator = 0;
@@ -248,7 +365,9 @@ class RooftopGame {
 
   buildOpeningCourse() {
     const baseSeed = this.seed;
-    const colors = ["#101d35", "#17233d", "#1d2340", "#102d39", "#20233a"];
+    const colors = IS_SPIDER
+      ? ["#161a38", "#241735", "#122542", "#29182d", "#172b43"]
+      : ["#101d35", "#17233d", "#1d2340", "#102d39", "#20233a"];
     const openingWidth = 1480 + Math.floor(this.random(baseSeed + 1) * 181);
     const openingEnd = -180 + openingWidth;
     const openingGap = 88 + Math.floor(this.random(baseSeed + 2) * 61);
@@ -409,7 +528,7 @@ class RooftopGame {
 
   reset(skipIntro) {
     this.phase = skipIntro ? "playing" : "intro";
-    this.phaseNode.textContent = skipIntro ? "IN PURSUIT" : "SWINGING IN";
+    this.phaseNode.textContent = skipIntro ? THEME.activeLabel : "SWINGING IN";
     runner.classList.toggle("playing", skipIntro);
     this.introNode.classList.toggle("hidden", skipIntro);
     this.overNode.classList.add("hidden");
@@ -492,7 +611,7 @@ class RooftopGame {
 
   showPlayingInterface() {
     this.phase = "playing";
-    this.phaseNode.textContent = "IN PURSUIT";
+    this.phaseNode.textContent = THEME.activeLabel;
     runner.classList.add("playing");
     this.introNode.classList.add("hidden");
     this.helpNode.classList.toggle("hidden", this.tutorialEnabled);
@@ -512,7 +631,7 @@ class RooftopGame {
     const finalScore = Math.floor(this.distance);
     if (finalScore > this.highScore) {
       this.highScore = finalScore;
-      writeStorage("niyant-rooftop-high-score", String(finalScore));
+      writeStorage(THEME.highScoreKey, String(finalScore));
       this.highNode.textContent = this.pad(finalScore);
     }
 
@@ -534,7 +653,7 @@ class RooftopGame {
     this.heartsNode.classList.toggle("critical", fullHearts === 1);
     this.heartsNode.setAttribute(
       "aria-label",
-      `Batman health: ${fullHearts} ${fullHearts === 1 ? "heart" : "hearts"}`,
+      `${THEME.heroName} health: ${fullHearts} ${fullHearts === 1 ? "heart" : "hearts"}`,
     );
   }
 
@@ -595,14 +714,14 @@ class RooftopGame {
         detail: "Move left or right to line up safer landings.",
       },
       {
-        title: "THROW BATARANG",
+        title: `THROW ${THEME.projectile}`,
         keys: touchInput ? ["THROW"] : ["SPACE"],
-        detail: "Use batarangs against bosses. Your three charges refill.",
+        detail: `Use ${THEME.projectile.toLowerCase()}s against bosses. Your three charges refill.`,
       },
       {
         title: "TRAINING COMPLETE",
         keys: ["✓"],
-        detail: "Boss fights give Batman three hearts. Make them count.",
+        detail: `Boss fights give ${THEME.heroName} three hearts. Make them count.`,
       },
     ];
 
@@ -707,7 +826,9 @@ class RooftopGame {
     const width = 390 + this.random(this.seed + 1) * 360;
     const y = this.clamp(last.y + (this.random(this.seed + 2) - 0.5) * 48, 356, 428);
     const x = last.x + last.width + gap;
-    const colors = ["#101d35", "#17233d", "#1d2340", "#102d39", "#20233a"];
+    const colors = IS_SPIDER
+      ? ["#161a38", "#241735", "#122542", "#29182d", "#172b43"]
+      : ["#101d35", "#17233d", "#1d2340", "#102d39", "#20233a"];
 
     const platform = {
       x,
@@ -1627,6 +1748,10 @@ class RooftopGame {
       this.startVillainMelee();
     }
 
+    if (THEME.attackLabels) {
+      this.joker.attackLabel = THEME.attackLabels[this.joker.kind][attack];
+    }
+
     this.joker.attackLabelTimer = this.joker.attackMode === "melee-windup"
       ? VILLAIN_PROFILES[this.joker.kind].meleeWindup + 0.3
       : 0.68;
@@ -2136,7 +2261,7 @@ class RooftopGame {
         this.joker = null;
         this.bombs = [];
         this.releaseBossArena();
-        this.phaseNode.textContent = "IN PURSUIT";
+        this.phaseNode.textContent = THEME.activeLabel;
         this.updateHearts();
       }
       return;
@@ -2643,7 +2768,9 @@ class RooftopGame {
         for (let windowX = x + 13; windowX < x + width - 10; windowX += 24) {
           const light = this.random(id * 31 + windowX * 0.07 + windowY * 0.11);
           if (light > 0.5) {
-            context.fillStyle = light > 0.78 ? "#52bdad" : "#284769";
+            context.fillStyle = IS_SPIDER
+              ? (light > 0.78 ? "#ff6c72" : "#406bb0")
+              : (light > 0.78 ? "#52bdad" : "#284769");
             context.fillRect(windowX, windowY, 7, 9);
           }
         }
@@ -2655,18 +2782,18 @@ class RooftopGame {
   drawSky() {
     const context = this.context;
     const sky = context.createLinearGradient(0, 0, 0, 540);
-    sky.addColorStop(0, "#020815");
-    sky.addColorStop(0.58, "#071225");
-    sky.addColorStop(1, "#0c1727");
+    sky.addColorStop(0, IS_SPIDER ? "#080616" : "#020815");
+    sky.addColorStop(0.58, IS_SPIDER ? "#10142e" : "#071225");
+    sky.addColorStop(1, IS_SPIDER ? "#1b1025" : "#0c1727");
     context.fillStyle = sky;
     context.fillRect(0, 0, 960, 540);
 
     context.save();
     context.globalAlpha = 0.26;
     const glow = context.createRadialGradient(830, 92, 10, 830, 92, 100);
-    glow.addColorStop(0, "#d8ffff");
-    glow.addColorStop(0.25, "#8ecfd0");
-    glow.addColorStop(1, "rgba(60, 130, 145, 0)");
+    glow.addColorStop(0, IS_SPIDER ? "#fff4f4" : "#d8ffff");
+    glow.addColorStop(0.25, IS_SPIDER ? "#e74258" : "#8ecfd0");
+    glow.addColorStop(1, IS_SPIDER ? "rgba(204, 38, 71, 0)" : "rgba(60, 130, 145, 0)");
     context.fillStyle = glow;
     context.fillRect(720, 0, 240, 210);
     if (this.signal.complete) {
@@ -2679,7 +2806,7 @@ class RooftopGame {
       this.worldOffset * 0.1,
       248,
       116,
-      "#081326",
+      IS_SPIDER ? "#11132b" : "#081326",
       0.36,
       2 + this.skylineSeed,
     );
@@ -2687,7 +2814,7 @@ class RooftopGame {
       this.worldOffset * 0.24,
       314,
       94,
-      "#0b1930",
+      IS_SPIDER ? "#191733" : "#0b1930",
       0.54,
       5 + this.skylineSeed,
     );
@@ -2695,13 +2822,15 @@ class RooftopGame {
       this.worldOffset * 0.43,
       355,
       112,
-      "#0d1d32",
+      IS_SPIDER ? "#20182f" : "#0d1d32",
       0.72,
       9 + this.skylineSeed,
     );
 
     context.save();
-    context.strokeStyle = "rgba(128, 225, 235, 0.13)";
+    context.strokeStyle = IS_SPIDER
+      ? "rgba(164, 194, 255, 0.14)"
+      : "rgba(128, 225, 235, 0.13)";
     for (let index = 0; index < 56; index += 1) {
       const x = (index * 151 + this.elapsed * 190) % 1100 - 70;
       const y = (index * 83 + this.elapsed * 280) % 640 - 50;
@@ -2715,18 +2844,20 @@ class RooftopGame {
 
   drawPlatforms() {
     const context = this.context;
-    const windowColors = ["#59ddb9", "#6e94ea", "#b184dc", "#d5ad59"];
+    const windowColors = IS_SPIDER
+      ? ["#ff6678", "#668dff", "#d58aff", "#f0be62"]
+      : ["#59ddb9", "#6e94ea", "#b184dc", "#d5ad59"];
 
     this.platforms.forEach((platform) => {
       const building = context.createLinearGradient(platform.x, platform.y, platform.x, 540);
       building.addColorStop(0, platform.color);
-      building.addColorStop(1, "#07111f");
+      building.addColorStop(1, IS_SPIDER ? "#0c0c1d" : "#07111f");
       context.fillStyle = building;
       context.fillRect(platform.x, platform.y, platform.width, 540 - platform.y);
 
-      context.fillStyle = "#263750";
+      context.fillStyle = IS_SPIDER ? "#3d3358" : "#263750";
       context.fillRect(platform.x, platform.y, platform.width, 6);
-      context.fillStyle = "#07101d";
+      context.fillStyle = IS_SPIDER ? "#0c0b19" : "#07101d";
       context.fillRect(platform.x, platform.y + 6, platform.width, 7);
 
       context.globalAlpha = 0.78;
@@ -2955,9 +3086,9 @@ class RooftopGame {
       if (hazard.kind === "bane-wave") {
         context.save();
         context.translate(hazard.x, hazard.y);
-        context.strokeStyle = "#ef7654";
-        context.fillStyle = "rgba(239,118,84,.32)";
-        context.shadowColor = "#ef7654";
+        context.strokeStyle = IS_SPIDER ? "#a66bff" : "#ef7654";
+        context.fillStyle = IS_SPIDER ? "rgba(112,70,170,.38)" : "rgba(239,118,84,.32)";
+        context.shadowColor = IS_SPIDER ? "#a66bff" : "#ef7654";
         context.shadowBlur = 12;
         if (!hazard.active) {
           const pulse = 18 + Math.sin(this.elapsed * 18) * 7;
@@ -2986,20 +3117,31 @@ class RooftopGame {
         context.save();
         context.translate(hazard.x, hazard.y);
         context.globalAlpha = hazard.delay > 0 ? 0.38 : 1;
-        context.shadowColor = "#72f08b";
+        context.shadowColor = IS_SPIDER ? "#ffe75c" : "#72f08b";
         context.shadowBlur = 15;
         const glow = context.createRadialGradient(0, 0, 2, 0, 0, hazard.radius + 5);
-        glow.addColorStop(0, "#e7ff8a");
-        glow.addColorStop(0.4, "#5fe77c");
-        glow.addColorStop(1, "rgba(39,130,69,.2)");
+        glow.addColorStop(0, IS_SPIDER ? "#ffffff" : "#e7ff8a");
+        glow.addColorStop(0.4, IS_SPIDER ? "#ffe75c" : "#5fe77c");
+        glow.addColorStop(1, IS_SPIDER ? "rgba(62,160,255,.2)" : "rgba(39,130,69,.2)");
         context.fillStyle = glow;
         context.beginPath();
         context.arc(0, 0, hazard.radius + 4, 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = "#092717";
-        context.font = "700 20px 'Courier New', monospace";
-        context.textAlign = "center";
-        context.fillText("?", 0, 7);
+        if (IS_SPIDER) {
+          context.strokeStyle = "#ffffff";
+          context.lineWidth = 2;
+          context.beginPath();
+          context.moveTo(-8, -10);
+          context.lineTo(0, -2);
+          context.lineTo(-5, 3);
+          context.lineTo(8, 11);
+          context.stroke();
+        } else {
+          context.fillStyle = "#092717";
+          context.font = "700 20px 'Courier New', monospace";
+          context.textAlign = "center";
+          context.fillText("?", 0, 7);
+        }
         context.restore();
         return;
       }
@@ -3008,9 +3150,11 @@ class RooftopGame {
         context.save();
         const pulse = 0.45 + Math.sin(this.elapsed * 24) * 0.18;
         context.globalAlpha = hazard.active ? 0.95 : pulse;
-        context.shadowColor = "#6fff8d";
+        context.shadowColor = IS_SPIDER ? "#ffe75c" : "#6fff8d";
         context.shadowBlur = hazard.active ? 18 : 7;
-        context.fillStyle = hazard.active ? "#8dffa1" : "#3b9e55";
+        context.fillStyle = hazard.active
+          ? (IS_SPIDER ? "#fff274" : "#8dffa1")
+          : (IS_SPIDER ? "#9a8125" : "#3b9e55");
         context.fillRect(hazard.x, hazard.y - (hazard.active ? 5 : 1), hazard.width, hazard.active ? 10 : 2);
         context.restore();
         return;
@@ -3053,21 +3197,33 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         context.shadowColor = "#78c8ff";
         context.shadowBlur = 8;
-        context.fillStyle = "#111a28";
+        context.fillStyle = IS_SPIDER ? "#344052" : "#111a28";
         context.beginPath();
         context.ellipse(0, 0, 17, 20, 0, 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = "#dceff2";
+        context.fillStyle = IS_SPIDER ? "#f0a34f" : "#dceff2";
         context.beginPath();
         context.ellipse(0, 4, 10, 13, 0, 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = "#e7a845";
-        context.beginPath();
-        context.moveTo(0, -7);
-        context.lineTo(9, -3);
-        context.lineTo(0, 0);
-        context.closePath();
-        context.fill();
+        if (IS_SPIDER) {
+          context.strokeStyle = "#c6d0dc";
+          context.lineWidth = 3;
+          for (let arm = 0; arm < 4; arm += 1) {
+            const angle = arm * Math.PI / 2 + this.elapsed * 0.8;
+            context.beginPath();
+            context.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+            context.lineTo(Math.cos(angle) * 25, Math.sin(angle) * 25);
+            context.stroke();
+          }
+        } else {
+          context.fillStyle = "#e7a845";
+          context.beginPath();
+          context.moveTo(0, -7);
+          context.lineTo(9, -3);
+          context.lineTo(0, 0);
+          context.closePath();
+          context.fill();
+        }
         context.fillStyle = Math.sin(this.elapsed * 20) > 0 ? "#ff4d6e" : "#6b2b3c";
         context.fillRect(-4, 5, 8, 5);
         context.strokeStyle = "#7b94aa";
@@ -3085,18 +3241,18 @@ class RooftopGame {
       if (hazard.kind === "ivy-vine") {
         context.save();
         context.translate(hazard.x, hazard.y);
-        context.shadowColor = "#66e779";
+        context.shadowColor = IS_SPIDER ? "#e8bd7a" : "#66e779";
         context.shadowBlur = hazard.active ? 12 : 5;
         if (!hazard.active) {
           const pulse = 30 + Math.sin(this.elapsed * 18) * 7;
           context.globalAlpha = 0.7;
-          context.strokeStyle = "#8cff91";
+          context.strokeStyle = IS_SPIDER ? "#f0cb91" : "#8cff91";
           context.lineWidth = 3;
           context.beginPath();
           context.ellipse(0, -3, pulse, 8, 0, 0, Math.PI * 2);
           context.stroke();
         } else {
-          context.strokeStyle = "#3fc85a";
+          context.strokeStyle = IS_SPIDER ? "#c79556" : "#3fc85a";
           context.lineWidth = 7;
           context.lineCap = "round";
           context.beginPath();
@@ -3104,13 +3260,13 @@ class RooftopGame {
           context.bezierCurveTo(-21, -29, -5, 8, 13, -23);
           context.bezierCurveTo(24, -40, 30, -8, 39, -27);
           context.stroke();
-          context.fillStyle = "#8be56d";
+          context.fillStyle = IS_SPIDER ? "#d8ad70" : "#8be56d";
           [-28, -9, 10, 29].forEach((x, index) => {
             context.beginPath();
             context.ellipse(x, -14 - (index % 2) * 8, 9, 4, index % 2 ? -0.6 : 0.6, 0, Math.PI * 2);
             context.fill();
           });
-          context.fillStyle = "#f26c9f";
+          context.fillStyle = IS_SPIDER ? "#fff0bf" : "#f26c9f";
           context.beginPath();
           context.arc(13, -25, 5, 0, Math.PI * 2);
           context.fill();
@@ -3124,7 +3280,7 @@ class RooftopGame {
         if (!hazard.active) {
           const groundY = hazard.targetY + hazard.radius;
           context.globalAlpha = 0.5 + Math.sin(this.elapsed * 16) * 0.2;
-          context.strokeStyle = "#ff82b0";
+          context.strokeStyle = IS_SPIDER ? "#efc17e" : "#ff82b0";
           context.lineWidth = 3;
           context.setLineDash([7, 5]);
           context.beginPath();
@@ -3138,13 +3294,15 @@ class RooftopGame {
         } else if (hazard.landed) {
           context.translate(hazard.x, hazard.y);
           context.globalAlpha = 0.5;
-          context.shadowColor = "#f070a2";
+          context.shadowColor = IS_SPIDER ? "#e8b66e" : "#f070a2";
           context.shadowBlur = 15;
           for (let puff = 0; puff < 8; puff += 1) {
             const angle = puff * 1.41 + this.elapsed * 0.45;
             const px = Math.cos(angle) * (14 + (puff % 3) * 10);
             const py = Math.sin(angle) * 10 - 12 - (puff % 2) * 8;
-            context.fillStyle = puff % 2 ? "#e75893" : "#9edb64";
+            context.fillStyle = IS_SPIDER
+              ? (puff % 2 ? "#bd8950" : "#e2bb7b")
+              : (puff % 2 ? "#e75893" : "#9edb64");
             context.beginPath();
             context.arc(px, py, 14 + (puff % 3) * 3, 0, Math.PI * 2);
             context.fill();
@@ -3152,13 +3310,13 @@ class RooftopGame {
         } else {
           context.translate(hazard.x, hazard.y);
           context.rotate(hazard.rotation);
-          context.shadowColor = "#ff7bac";
+          context.shadowColor = IS_SPIDER ? "#e8b66e" : "#ff7bac";
           context.shadowBlur = 13;
-          context.fillStyle = "#e85e99";
+          context.fillStyle = IS_SPIDER ? "#c79255" : "#e85e99";
           context.beginPath();
           context.ellipse(0, 0, 13, 18, 0, 0, Math.PI * 2);
           context.fill();
-          context.fillStyle = "#ceffd0";
+          context.fillStyle = IS_SPIDER ? "#fff0bd" : "#ceffd0";
           for (let dot = 0; dot < 5; dot += 1) {
             const angle = dot * Math.PI * 0.4;
             context.beginPath();
@@ -3199,8 +3357,25 @@ class RooftopGame {
         context.save();
         context.translate(hazard.x, hazard.y);
         context.rotate(hazard.rotation);
-        context.shadowColor = "#ffc75f";
+        context.shadowColor = IS_SPIDER ? "#8fffe4" : "#ffc75f";
         context.shadowBlur = 11;
+        if (IS_SPIDER) {
+          const mist = context.createRadialGradient(0, 0, 2, 0, 0, hazard.radius + 3);
+          mist.addColorStop(0, "#f4ffff");
+          mist.addColorStop(0.45, "#8fffe4");
+          mist.addColorStop(1, "rgba(174,91,255,.2)");
+          context.fillStyle = mist;
+          context.beginPath();
+          context.arc(0, 0, hazard.radius + 3, 0, Math.PI * 2);
+          context.fill();
+          context.strokeStyle = "#d480ff";
+          context.lineWidth = 2;
+          context.beginPath();
+          context.arc(0, 0, hazard.radius, 0, Math.PI * 2);
+          context.stroke();
+          context.restore();
+          return;
+        }
         context.fillStyle = "#f0a44e";
         context.beginPath();
         context.arc(0, 0, hazard.radius, Math.PI / 2, Math.PI * 1.5);
@@ -3229,9 +3404,9 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         context.globalAlpha = hazard.delay > 0 ? 0.3 : 1;
         const flap = Math.sin(this.elapsed * 25 + hazard.rotation) * 9;
-        context.shadowColor = "#e0b65d";
+        context.shadowColor = IS_SPIDER ? "#85e56f" : "#e0b65d";
         context.shadowBlur = 7;
-        context.fillStyle = "#11151a";
+        context.fillStyle = IS_SPIDER ? "#477e3e" : "#11151a";
         context.beginPath();
         context.moveTo(-1, 0);
         context.quadraticCurveTo(-15, -11 - flap, -25, -2);
@@ -3241,7 +3416,7 @@ class RooftopGame {
         context.quadraticCurveTo(15, -11, 1, 0);
         context.closePath();
         context.fill();
-        context.fillStyle = "#efbd49";
+        context.fillStyle = IS_SPIDER ? "#dff58f" : "#efbd49";
         context.beginPath();
         context.moveTo(-3, 0);
         context.lineTo(-11, 4);
@@ -3257,13 +3432,15 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         if (hazard.active) {
           context.globalAlpha = 0.42;
-          context.shadowColor = "#d9d75f";
+          context.shadowColor = IS_SPIDER ? "#72ef76" : "#d9d75f";
           context.shadowBlur = 18;
           for (let puff = 0; puff < 8; puff += 1) {
             const angle = puff * 1.27 + this.elapsed * 0.6;
             const x = Math.cos(angle) * (13 + (puff % 3) * 11);
             const y = Math.sin(angle) * 12 - (puff % 2) * 13;
-            context.fillStyle = puff % 2 ? "#b7b94d" : "#ded269";
+            context.fillStyle = IS_SPIDER
+              ? (puff % 2 ? "#55a84c" : "#88dc69")
+              : (puff % 2 ? "#b7b94d" : "#ded269");
             context.beginPath();
             context.arc(x, y, 17 + (puff % 3) * 3, 0, Math.PI * 2);
             context.fill();
@@ -3298,13 +3475,15 @@ class RooftopGame {
         context.save();
         const pulse = 0.42 + Math.sin(this.elapsed * 25) * 0.18;
         context.globalAlpha = hazard.active ? 0.96 : pulse;
-        context.shadowColor = "#86eaff";
+        context.shadowColor = IS_SPIDER ? "#a7e893" : "#86eaff";
         context.shadowBlur = hazard.active ? 22 : 8;
         const beamHeight = hazard.active ? hazard.height : 2;
-        context.fillStyle = hazard.active ? "#b9f4ff" : "#4aa9c9";
+        context.fillStyle = hazard.active
+          ? (IS_SPIDER ? "rgba(194,255,178,.72)" : "#b9f4ff")
+          : (IS_SPIDER ? "#5f9f5a" : "#4aa9c9");
         context.fillRect(hazard.x, hazard.y - beamHeight / 2, hazard.width, beamHeight);
         if (hazard.active) {
-          context.fillStyle = "rgba(92,207,244,.45)";
+          context.fillStyle = IS_SPIDER ? "rgba(112,190,96,.32)" : "rgba(92,207,244,.45)";
           context.fillRect(hazard.x, hazard.y - 12, hazard.width, 24);
         }
         context.restore();
@@ -3314,20 +3493,20 @@ class RooftopGame {
       if (hazard.kind === "freeze-spike") {
         context.save();
         context.translate(hazard.x, hazard.y);
-        context.shadowColor = "#80e7ff";
+        context.shadowColor = IS_SPIDER ? "#b6e9a3" : "#80e7ff";
         context.shadowBlur = hazard.active ? 16 : 5;
         if (!hazard.active) {
           context.globalAlpha = 0.48 + Math.sin(this.elapsed * 20) * 0.2;
-          context.strokeStyle = "#9cecff";
+          context.strokeStyle = IS_SPIDER ? "#b9e6a5" : "#9cecff";
           context.lineWidth = 3;
           context.beginPath();
           context.ellipse(0, -3, 22, 7, 0, 0, Math.PI * 2);
           context.stroke();
         } else {
           const gradient = context.createLinearGradient(0, -hazard.height, 0, 0);
-          gradient.addColorStop(0, "#e9fdff");
-          gradient.addColorStop(0.45, "#73daf5");
-          gradient.addColorStop(1, "#276d90");
+          gradient.addColorStop(0, IS_SPIDER ? "#eaffdd" : "#e9fdff");
+          gradient.addColorStop(0.45, IS_SPIDER ? "#8dbd7e" : "#73daf5");
+          gradient.addColorStop(1, IS_SPIDER ? "#315b38" : "#276d90");
           context.fillStyle = gradient;
           context.beginPath();
           context.moveTo(-16, 0);
@@ -3337,7 +3516,7 @@ class RooftopGame {
           context.lineTo(16, 0);
           context.closePath();
           context.fill();
-          context.strokeStyle = "#d9faff";
+          context.strokeStyle = IS_SPIDER ? "#e6ffdc" : "#d9faff";
           context.lineWidth = 2;
           context.stroke();
         }
@@ -3352,19 +3531,37 @@ class RooftopGame {
         context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
         context.shadowColor = hazard.effectColor;
         context.shadowBlur = 9;
-        context.fillStyle = "#ece9dd";
-        context.fillRect(-12, -7, 24, 14);
-        context.strokeStyle = hazard.effectColor;
-        context.lineWidth = 2;
-        context.strokeRect(-12, -7, 24, 14);
-        context.fillStyle = hazard.effectColor;
-        context.beginPath();
-        context.moveTo(0, -5);
-        context.lineTo(5, 0);
-        context.lineTo(0, 5);
-        context.lineTo(-5, 0);
-        context.closePath();
-        context.fill();
+        if (IS_SPIDER) {
+          context.fillStyle = "#562b78";
+          context.strokeStyle = "#a6ff61";
+          context.lineWidth = 2;
+          context.beginPath();
+          context.moveTo(-15, 0);
+          context.lineTo(-7, -7);
+          context.lineTo(0, -2);
+          context.lineTo(7, -7);
+          context.lineTo(15, 0);
+          context.lineTo(6, 5);
+          context.lineTo(0, 2);
+          context.lineTo(-6, 5);
+          context.closePath();
+          context.fill();
+          context.stroke();
+        } else {
+          context.fillStyle = "#ece9dd";
+          context.fillRect(-12, -7, 24, 14);
+          context.strokeStyle = hazard.effectColor;
+          context.lineWidth = 2;
+          context.strokeRect(-12, -7, 24, 14);
+          context.fillStyle = hazard.effectColor;
+          context.beginPath();
+          context.moveTo(0, -5);
+          context.lineTo(5, 0);
+          context.lineTo(0, 5);
+          context.lineTo(-5, 0);
+          context.closePath();
+          context.fill();
+        }
         context.restore();
         return;
       }
@@ -3405,17 +3602,17 @@ class RooftopGame {
       if (hazard.kind === "riddler-mine") {
         context.save();
         context.translate(hazard.x, hazard.y);
-        context.shadowColor = "#6fff8d";
+        context.shadowColor = IS_SPIDER ? "#ffe75c" : "#6fff8d";
         context.shadowBlur = hazard.active ? 17 : 7;
         if (!hazard.active) {
           context.globalAlpha = 0.45 + Math.sin(this.elapsed * 22) * 0.2;
-          context.strokeStyle = "#75ef8a";
+          context.strokeStyle = IS_SPIDER ? "#ffe75c" : "#75ef8a";
           context.lineWidth = 3;
           context.beginPath();
           context.ellipse(0, -3, 22, 7, 0, 0, Math.PI * 2);
           context.stroke();
         } else {
-          context.fillStyle = "rgba(75,232,111,.45)";
+          context.fillStyle = IS_SPIDER ? "rgba(255,223,72,.42)" : "rgba(75,232,111,.45)";
           context.beginPath();
           context.moveTo(-18, 0);
           context.lineTo(-10, -33);
@@ -3424,7 +3621,7 @@ class RooftopGame {
           context.lineTo(18, 0);
           context.closePath();
           context.fill();
-          context.strokeStyle = "#a3ff7b";
+          context.strokeStyle = IS_SPIDER ? "#fff48a" : "#a3ff7b";
           context.lineWidth = 2;
           context.stroke();
           context.fillStyle = "#dfff77";
@@ -3469,9 +3666,9 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         context.rotate(hazard.rotation * 0.2);
         context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
-        context.shadowColor = "#ef6e9f";
+        context.shadowColor = IS_SPIDER ? "#ffd89a" : "#ef6e9f";
         context.shadowBlur = 10;
-        context.fillStyle = "#e9699a";
+        context.fillStyle = IS_SPIDER ? "#e1c392" : "#e9699a";
         context.beginPath();
         context.moveTo(-14, -5);
         context.lineTo(15, 0);
@@ -3479,7 +3676,7 @@ class RooftopGame {
         context.lineTo(-7, 0);
         context.closePath();
         context.fill();
-        context.fillStyle = "#71d66f";
+        context.fillStyle = IS_SPIDER ? "#fff1c7" : "#71d66f";
         context.beginPath();
         context.ellipse(-9, -7, 8, 3, -0.5, 0, Math.PI * 2);
         context.fill();
@@ -3494,12 +3691,12 @@ class RooftopGame {
         context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
         context.shadowColor = hazard.effectColor;
         context.shadowBlur = 13;
-        context.fillStyle = "#f0a44e";
+        context.fillStyle = IS_SPIDER ? "#73f0d0" : "#f0a44e";
         context.beginPath();
         context.arc(0, 0, 9, Math.PI / 2, Math.PI * 1.5);
         context.closePath();
         context.fill();
-        context.fillStyle = "#82cbff";
+        context.fillStyle = IS_SPIDER ? "#c879ff" : "#82cbff";
         context.beginPath();
         context.arc(0, 0, 9, -Math.PI / 2, Math.PI / 2);
         context.closePath();
@@ -3518,14 +3715,14 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         context.rotate(hazard.rotation);
         context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
-        context.shadowColor = "#d0a654";
+        context.shadowColor = IS_SPIDER ? "#8fe578" : "#d0a654";
         context.shadowBlur = 9;
-        context.strokeStyle = "#c9d1ce";
+        context.strokeStyle = IS_SPIDER ? "#d6ffc8" : "#c9d1ce";
         context.lineWidth = 6;
         context.beginPath();
         context.arc(0, 0, 16, Math.PI * 0.25, Math.PI * 1.55);
         context.stroke();
-        context.strokeStyle = "#795b32";
+        context.strokeStyle = IS_SPIDER ? "#42753c" : "#795b32";
         context.lineWidth = 4;
         context.beginPath();
         context.moveTo(11, 11);
@@ -3540,12 +3737,12 @@ class RooftopGame {
         context.translate(hazard.x, hazard.y);
         context.rotate(hazard.rotation);
         context.globalAlpha = hazard.delay > 0 ? 0.35 : 1;
-        context.shadowColor = "#8ee9ff";
+        context.shadowColor = IS_SPIDER ? "#a8f49a" : "#8ee9ff";
         context.shadowBlur = 18;
         const orb = context.createRadialGradient(0, 0, 2, 0, 0, 19);
-        orb.addColorStop(0, "#f1feff");
-        orb.addColorStop(0.45, "#8ee9ff");
-        orb.addColorStop(1, "rgba(54,139,180,.28)");
+        orb.addColorStop(0, IS_SPIDER ? "#f4ffed" : "#f1feff");
+        orb.addColorStop(0.45, IS_SPIDER ? "#8fdd7e" : "#8ee9ff");
+        orb.addColorStop(1, IS_SPIDER ? "rgba(53,116,54,.28)" : "rgba(54,139,180,.28)");
         context.fillStyle = orb;
         context.beginPath();
         context.arc(0, 0, 19, 0, Math.PI * 2);
@@ -4291,8 +4488,462 @@ class RooftopGame {
     context.restore();
   }
 
+  drawSpiderVillain() {
+    const context = this.context;
+    const villain = this.joker;
+    const profile = VILLAIN_PROFILES[villain.kind];
+    const runCycle = Math.sin(this.elapsed * 11) * (villain.state === "entering" ? 5 : 1.6);
+    const meleePose = villain.attackMode?.startsWith("melee-");
+    const meleeStrike = ["melee-strike", "melee-recover"].includes(villain.attackMode);
+    const attackPose = villain.attackLabelTimer > 0 || meleePose;
+    const reach = meleeStrike ? 24 : (meleePose ? 8 : 0);
+
+    const drawLegs = (color, width = 10, spread = 12) => {
+      context.strokeStyle = color;
+      context.lineWidth = width;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(-8, -21);
+      context.lineTo(-spread - runCycle, -2);
+      context.moveTo(8, -21);
+      context.lineTo(spread + runCycle, -2);
+      context.stroke();
+    };
+
+    const drawHitState = () => {
+      if (villain.hitFlash > 0) {
+        context.globalAlpha = 0.72 + Math.sin(this.elapsed * 80) * 0.2;
+        context.shadowColor = "white";
+        context.shadowBlur = 18;
+      }
+    };
+
+    context.save();
+    context.translate(villain.x, villain.feet);
+    if (villain.state === "defeated") context.rotate(villain.rotation);
+    else if (meleeStrike) context.rotate(-0.1);
+    drawHitState();
+    context.fillStyle = "rgba(0,0,0,.33)";
+    context.beginPath();
+    context.ellipse(0, 2, villain.kind === "bane" ? 40 : 31, 8, 0, 0, Math.PI * 2);
+    context.fill();
+
+    if (villain.kind === "joker") {
+      context.save();
+      context.translate(0, attackPose ? -5 : 0);
+      context.fillStyle = "#523276";
+      context.beginPath();
+      context.moveTo(-45, -2);
+      context.lineTo(-24, -14);
+      context.lineTo(0, -8);
+      context.lineTo(24, -14);
+      context.lineTo(46, -2);
+      context.lineTo(20, 5);
+      context.lineTo(-20, 5);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#b483e0";
+      context.lineWidth = 2;
+      context.stroke();
+      context.fillStyle = "#ff9b3d";
+      context.fillRect(-26, -7, 9, 3);
+      context.fillRect(17, -7, 9, 3);
+      context.restore();
+      drawLegs("#4c2d70", 9, 11);
+      context.fillStyle = villain.hitFlash > 0 ? "#f7fff1" : "#5aab3f";
+      context.beginPath();
+      context.moveTo(-21, -60);
+      context.lineTo(20, -60);
+      context.lineTo(25, -19);
+      context.lineTo(-24, -19);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#63398c";
+      context.lineWidth = 9;
+      context.beginPath();
+      context.moveTo(-15, -51);
+      context.lineTo(-31 - reach, -34);
+      context.moveTo(15, -51);
+      context.lineTo(29, -36);
+      context.stroke();
+      context.fillStyle = "#63bb42";
+      context.beginPath();
+      context.moveTo(-16, -70);
+      context.lineTo(-7, -90);
+      context.lineTo(17, -72);
+      context.lineTo(10, -57);
+      context.lineTo(-11, -57);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#ffe874";
+      context.fillRect(-9, -72, 6, 3);
+      context.fillRect(4, -72, 6, 3);
+      context.strokeStyle = "#38224f";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(-13, -82);
+      context.lineTo(-4, -95);
+      context.moveTo(9, -82);
+      context.lineTo(17, -93);
+      context.stroke();
+      if (attackPose && !meleePose) {
+        context.fillStyle = "#ff8b2b";
+        context.shadowColor = "#ff9d3f";
+        context.shadowBlur = 14;
+        context.beginPath();
+        context.arc(-38, -36, 10, 0, Math.PI * 2);
+        context.fill();
+        context.shadowBlur = 0;
+      }
+    } else if (villain.kind === "bane") {
+      context.save();
+      context.scale(1.13, 1.08);
+      drawLegs("#10131b", 15, 17);
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#11141d";
+      context.beginPath();
+      context.moveTo(-33, -75);
+      context.quadraticCurveTo(0, -88, 34, -74);
+      context.lineTo(29, -18);
+      context.lineTo(-30, -18);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#262c39";
+      context.lineWidth = 15;
+      context.beginPath();
+      context.moveTo(-26, -63);
+      context.lineTo(-48 - reach, -38);
+      context.moveTo(27, -63);
+      context.lineTo(48, -37);
+      context.stroke();
+      context.fillStyle = "#f3f7ff";
+      context.beginPath();
+      context.moveTo(-20, -75);
+      context.lineTo(-3, -67);
+      context.lineTo(-10, -56);
+      context.closePath();
+      context.fill();
+      context.beginPath();
+      context.moveTo(20, -75);
+      context.lineTo(3, -67);
+      context.lineTo(10, -56);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#f1f4ff";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(0, -58);
+      context.lineTo(0, -27);
+      context.moveTo(0, -45);
+      context.lineTo(-17, -35);
+      context.moveTo(0, -45);
+      context.lineTo(17, -35);
+      context.moveTo(-17, -35);
+      context.lineTo(-25, -25);
+      context.moveTo(17, -35);
+      context.lineTo(25, -25);
+      context.stroke();
+      context.strokeStyle = "#e8f1ff";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-11, -50);
+      context.quadraticCurveTo(0, -42, 12, -50);
+      context.stroke();
+      if (attackPose) {
+        context.strokeStyle = "#a66bff";
+        context.shadowColor = "#a66bff";
+        context.shadowBlur = 10;
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(31, -65);
+        context.quadraticCurveTo(63, -87, 72, -48);
+        context.stroke();
+        context.shadowBlur = 0;
+      }
+      context.restore();
+    } else if (villain.kind === "riddler") {
+      drawLegs("#1e5aa1", 9, 12);
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#f0cb2f";
+      context.fillRect(-20, -62, 40, 45);
+      context.strokeStyle = "#f5dd4f";
+      context.lineWidth = 8;
+      context.beginPath();
+      context.moveTo(-15, -53);
+      context.lineTo(-31 - reach, -35);
+      context.moveTo(15, -53);
+      context.lineTo(31, -35);
+      context.stroke();
+      context.fillStyle = "#f3d334";
+      context.beginPath();
+      context.arc(0, -75, 15, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#15294f";
+      context.fillRect(-10, -77, 20, 5);
+      context.fillStyle = "#eaffff";
+      context.fillRect(-8, -76, 5, 2);
+      context.fillRect(4, -76, 5, 2);
+      context.strokeStyle = "#fff47b";
+      context.shadowColor = "#ffe74d";
+      context.shadowBlur = 10;
+      context.lineWidth = 3;
+      const arc = Math.sin(this.elapsed * 18) * 5;
+      context.beginPath();
+      context.moveTo(-28 - reach, -37);
+      context.lineTo(-38, -49 + arc);
+      context.lineTo(-48, -35 - arc);
+      context.lineTo(-58, -48);
+      context.stroke();
+      if (attackPose) {
+        context.beginPath();
+        context.moveTo(26, -55);
+        context.lineTo(38, -68 - arc);
+        context.lineTo(49, -52 + arc);
+        context.lineTo(63, -66);
+        context.stroke();
+      }
+      context.shadowBlur = 0;
+    } else if (villain.kind === "penguin") {
+      context.strokeStyle = "#9ba8b9";
+      context.lineWidth = 6;
+      context.lineCap = "round";
+      [-1, 1].forEach((side) => {
+        context.beginPath();
+        context.moveTo(side * 13, -57);
+        context.bezierCurveTo(side * 42, -90, side * 55, -14, side * (66 + reach), -42);
+        context.stroke();
+        context.fillStyle = "#bdc7d4";
+        context.beginPath();
+        context.arc(side * (68 + reach), -43, 7, 0, Math.PI * 2);
+        context.fill();
+        context.beginPath();
+        context.moveTo(side * 9, -48);
+        context.bezierCurveTo(side * 45, -20, side * 48, -95, side * 70, -72);
+        context.stroke();
+      });
+      drawLegs("#29333d", 9, 11);
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#596d55";
+      context.fillRect(-22, -64, 44, 47);
+      context.fillStyle = "#4d3526";
+      context.fillRect(-17, -58, 34, 41);
+      context.strokeStyle = "#526251";
+      context.lineWidth = 8;
+      context.beginPath();
+      context.moveTo(-15, -53);
+      context.lineTo(-28 - reach, -34);
+      context.moveTo(15, -53);
+      context.lineTo(29, -34);
+      context.stroke();
+      context.fillStyle = "#c7a47e";
+      context.beginPath();
+      context.arc(0, -76, 14, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#263630";
+      context.beginPath();
+      context.arc(0, -78, 15, Math.PI, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#a9f4db";
+      context.fillRect(-11, -78, 8, 4);
+      context.fillRect(3, -78, 8, 4);
+    } else if (villain.kind === "ivy") {
+      context.save();
+      context.globalAlpha = 0.35;
+      context.fillStyle = "#d9ad6c";
+      for (let grain = 0; grain < 10; grain += 1) {
+        const angle = grain * 2.1 + this.elapsed;
+        context.fillRect(Math.cos(angle) * (25 + grain), -35 + Math.sin(angle) * 30, 3, 3);
+      }
+      context.restore();
+      drawLegs("#ad7741", 12, 15);
+      context.fillStyle = villain.hitFlash > 0 ? "#fff9e8" : "#3f7352";
+      context.beginPath();
+      context.moveTo(-27, -69);
+      context.lineTo(24, -69);
+      context.lineTo(31, -18);
+      context.lineTo(-30, -18);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#d1a161";
+      context.lineWidth = 14;
+      context.beginPath();
+      context.moveTo(-23, -58);
+      context.lineTo(-44 - reach, -34);
+      context.moveTo(22, -58);
+      context.lineTo(43, -34);
+      context.stroke();
+      if (attackPose) {
+        context.fillStyle = "#d7aa68";
+        context.beginPath();
+        context.arc(-54 - reach, -34, 19, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.fillStyle = "#c69864";
+      context.beginPath();
+      context.arc(0, -82, 17, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#3b2518";
+      context.fillRect(-10, -84, 7, 3);
+      context.fillRect(4, -84, 7, 3);
+    } else if (villain.kind === "twoface") {
+      context.fillStyle = "rgba(117,246,219,.18)";
+      context.beginPath();
+      context.ellipse(0, -78, 25, 30, 0, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = "#a7f2dd";
+      context.lineWidth = 2;
+      context.shadowColor = "#70ffd6";
+      context.shadowBlur = 12;
+      context.stroke();
+      context.shadowBlur = 0;
+      drawLegs("#53306d", 9, 12);
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#4b8c53";
+      context.beginPath();
+      context.moveTo(-22, -63);
+      context.lineTo(22, -63);
+      context.lineTo(26, -18);
+      context.lineTo(-26, -18);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#67358c";
+      context.beginPath();
+      context.moveTo(-21, -60);
+      context.lineTo(-39, -24);
+      context.lineTo(-24, -17);
+      context.lineTo(0, -38);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#67358c";
+      context.lineWidth = 9;
+      context.beginPath();
+      context.moveTo(-15, -53);
+      context.lineTo(-31 - reach, -34);
+      context.moveTo(15, -53);
+      context.lineTo(31, -34);
+      context.stroke();
+      context.fillStyle = "rgba(222,255,248,.72)";
+      context.beginPath();
+      context.arc(0, -78, 17, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = "rgba(255,255,255,.45)";
+      context.beginPath();
+      context.arc(-5, -84, 7, Math.PI, Math.PI * 1.7);
+      context.stroke();
+    } else if (villain.kind === "scarecrow") {
+      context.strokeStyle = "#477d3e";
+      context.lineWidth = 11;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(-8, -22);
+      context.lineTo(-15 - runCycle, -2);
+      context.moveTo(8, -22);
+      context.lineTo(14 + runCycle, -2);
+      context.stroke();
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#4b8c44";
+      context.beginPath();
+      context.moveTo(-26, -68);
+      context.lineTo(23, -68);
+      context.lineTo(29, -19);
+      context.lineTo(-28, -19);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#5ca34c";
+      context.lineWidth = 11;
+      context.beginPath();
+      context.moveTo(-20, -57);
+      context.lineTo(-40 - reach, -34);
+      context.moveTo(20, -57);
+      context.lineTo(41, -34);
+      context.stroke();
+      context.strokeStyle = "#76d45e";
+      context.lineWidth = 8;
+      context.beginPath();
+      context.moveTo(19, -24);
+      context.bezierCurveTo(54, -12, 61, -44, 82, -28);
+      context.stroke();
+      context.fillStyle = "#5da850";
+      context.beginPath();
+      context.moveTo(-16, -79);
+      context.quadraticCurveTo(0, -95, 19, -78);
+      context.lineTo(14, -62);
+      context.lineTo(-12, -62);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#f0ff8b";
+      context.fillRect(-9, -78, 6, 3);
+      context.fillRect(5, -78, 6, 3);
+      context.strokeStyle = "#d9f7bd";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-40 - reach, -34);
+      context.lineTo(-49 - reach, -41);
+      context.moveTo(-40 - reach, -34);
+      context.lineTo(-51 - reach, -31);
+      context.stroke();
+    } else {
+      context.save();
+      context.globalAlpha = 0.86;
+      context.fillStyle = "#315f38";
+      const flap = attackPose ? 18 + Math.sin(this.elapsed * 13) * 9 : 8;
+      context.beginPath();
+      context.moveTo(-12, -61);
+      context.lineTo(-73, -85 - flap);
+      context.lineTo(-57, -39);
+      context.lineTo(-21, -21);
+      context.closePath();
+      context.fill();
+      context.beginPath();
+      context.moveTo(12, -61);
+      context.lineTo(73, -85 - flap);
+      context.lineTo(57, -39);
+      context.lineTo(21, -21);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#88b77c";
+      context.lineWidth = 2;
+      for (let feather = 0; feather < 3; feather += 1) {
+        context.beginPath();
+        context.moveTo(-18, -54 + feather * 8);
+        context.lineTo(-62 + feather * 8, -76 - flap + feather * 8);
+        context.moveTo(18, -54 + feather * 8);
+        context.lineTo(62 - feather * 8, -76 - flap + feather * 8);
+        context.stroke();
+      }
+      context.restore();
+      drawLegs("#334436", 10, 12);
+      context.fillStyle = villain.hitFlash > 0 ? "#ffffff" : "#416b43";
+      context.fillRect(-21, -65, 42, 48);
+      context.strokeStyle = "#537c54";
+      context.lineWidth = 9;
+      context.beginPath();
+      context.moveTo(-16, -54);
+      context.lineTo(-32 - reach, -34);
+      context.moveTo(16, -54);
+      context.lineTo(32, -34);
+      context.stroke();
+      context.fillStyle = "#a6b6a3";
+      context.beginPath();
+      context.arc(0, -77, 15, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#e4d85d";
+      context.beginPath();
+      context.moveTo(-2, -75);
+      context.lineTo(16, -70);
+      context.lineTo(0, -66);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#132219";
+      context.fillRect(-10, -80, 6, 3);
+      context.fillRect(4, -80, 6, 3);
+    }
+
+    context.shadowBlur = 0;
+    context.restore();
+  }
+
   drawJoker() {
     if (!this.joker) return;
+    if (IS_SPIDER) {
+      this.drawSpiderVillain();
+      return;
+    }
     if (this.joker.kind === "bane") {
       this.drawBane();
       return;
@@ -4430,6 +5081,32 @@ class RooftopGame {
       context.save();
       context.translate(batarang.x, batarang.y);
       context.rotate(batarang.rotation);
+      if (IS_SPIDER) {
+        context.shadowColor = "#bceeff";
+        context.shadowBlur = 11;
+        context.strokeStyle = "#e9fbff";
+        context.fillStyle = "rgba(164,225,255,.45)";
+        context.lineWidth = 1.5;
+        context.beginPath();
+        context.arc(0, 0, 7, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        for (let strand = 0; strand < 6; strand += 1) {
+          const angle = strand * Math.PI / 3;
+          context.beginPath();
+          context.moveTo(Math.cos(angle) * 4, Math.sin(angle) * 4);
+          context.lineTo(Math.cos(angle) * 13, Math.sin(angle) * 13);
+          context.stroke();
+        }
+        context.beginPath();
+        context.moveTo(-10, -5);
+        context.quadraticCurveTo(-19, 0, -29, -2);
+        context.moveTo(-10, 5);
+        context.quadraticCurveTo(-19, 0, -29, 2);
+        context.stroke();
+        context.restore();
+        return;
+      }
       context.shadowColor = "#75f4df";
       context.shadowBlur = 8;
       context.fillStyle = "#172a39";
@@ -4486,7 +5163,7 @@ class RooftopGame {
     context.fillStyle = chargeColor;
     context.font = "700 8px 'Courier New', monospace";
     context.textAlign = "left";
-    context.fillText(this.batarangCharges === 0 ? "WAIT" : "BATS", 344, 131);
+    context.fillText(this.batarangCharges === 0 ? "WAIT" : THEME.projectileShort, 344, 131);
     for (let charge = 0; charge < this.maxBatarangCharges; charge += 1) {
       const x = 374 + charge * 13;
       context.strokeStyle = chargeColor;
@@ -4567,7 +5244,128 @@ class RooftopGame {
     context.globalAlpha = 1;
   }
 
+  drawSpiderMan(x, feet, duckAmount, grounded, motion = 1) {
+    const context = this.context;
+    const runCycle = grounded ? Math.sin(this.elapsed * 17) * motion * (1 - duckAmount) : 0.25;
+    const bodyLean = grounded ? Math.sin(this.elapsed * 8.5) * 0.025 * motion : -0.12;
+    const throwReach = this.throwAnimation > 0
+      ? Math.sin((this.throwAnimation / 0.18) * Math.PI) * 22
+      : 0;
+
+    context.save();
+    if (
+      this.phase === "playing" &&
+      this.bossInvulnerability > 0 &&
+      Math.sin(this.elapsed * 42) > -0.1
+    ) context.globalAlpha = 0.38;
+    context.translate(x + duckAmount * 7, feet);
+    context.scale(1 + duckAmount * 0.1, 1 - duckAmount * 0.39);
+    context.rotate(bodyLean);
+
+    context.fillStyle = "rgba(0,0,0,.28)";
+    context.beginPath();
+    context.ellipse(0, 2, 25, 6, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.lineCap = "round";
+    context.strokeStyle = "#174a92";
+    context.lineWidth = 9;
+    context.beginPath();
+    context.moveTo(-7, -16);
+    context.lineTo(-12 - runCycle * 9, -1);
+    context.moveTo(8, -16);
+    context.lineTo(14 + runCycle * 9, -1);
+    context.stroke();
+
+    context.fillStyle = "#194b95";
+    context.beginPath();
+    context.moveTo(-15, -53);
+    context.lineTo(15, -53);
+    context.lineTo(19, -17);
+    context.lineTo(-18, -17);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#cf2943";
+    context.beginPath();
+    context.moveTo(-13, -55);
+    context.lineTo(13, -55);
+    context.lineTo(10, -28);
+    context.lineTo(0, -23);
+    context.lineTo(-10, -28);
+    context.closePath();
+    context.fill();
+
+    context.strokeStyle = "#d52b45";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-12, -49);
+    context.lineTo(-28 - runCycle * 4, -34 + runCycle * 2);
+    context.moveTo(12, -49);
+    context.lineTo(27 + runCycle * 4 + throwReach, -36 - throwReach * 0.18);
+    context.stroke();
+    context.fillStyle = "#d52b45";
+    context.beginPath();
+    context.arc(29 + runCycle * 4 + throwReach, -36 - throwReach * 0.18, 5, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#d82c47";
+    context.beginPath();
+    context.ellipse(0, -66, 15, 19, 0, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "#3a1423";
+    context.lineWidth = 1.2;
+    context.beginPath();
+    context.moveTo(0, -84);
+    context.lineTo(0, -49);
+    context.moveTo(-13, -72);
+    context.quadraticCurveTo(0, -62, 13, -72);
+    context.moveTo(-11, -79);
+    context.quadraticCurveTo(0, -70, 11, -79);
+    context.moveTo(-14, -64);
+    context.quadraticCurveTo(0, -55, 14, -64);
+    context.stroke();
+
+    context.fillStyle = "#f5fbff";
+    context.strokeStyle = "#101a2c";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-11, -72);
+    context.quadraticCurveTo(-4, -70, -3, -61);
+    context.quadraticCurveTo(-10, -63, -11, -72);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.moveTo(11, -72);
+    context.quadraticCurveTo(4, -70, 3, -61);
+    context.quadraticCurveTo(10, -63, 11, -72);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    context.strokeStyle = "#101827";
+    context.lineWidth = 1.4;
+    context.beginPath();
+    context.arc(0, -41, 9, 0.25, Math.PI - 0.25);
+    context.moveTo(0, -48);
+    context.lineTo(0, -29);
+    context.moveTo(-6, -44);
+    context.lineTo(6, -34);
+    context.moveTo(6, -44);
+    context.lineTo(-6, -34);
+    context.stroke();
+    context.fillStyle = "#111827";
+    context.beginPath();
+    context.arc(0, -39, 2.8, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
   drawBatman(x, feet, duckAmount, grounded, motion = 1) {
+    if (IS_SPIDER) {
+      this.drawSpiderMan(x, feet, duckAmount, grounded, motion);
+      return;
+    }
     const context = this.context;
     const runCycle = grounded ? Math.sin(this.elapsed * 16) * motion * (1 - duckAmount) : 0.25;
     const capeWave = Math.sin(this.elapsed * 11) * 4 * motion;
@@ -4656,9 +5454,9 @@ class RooftopGame {
       const batFeet = pivotY + Math.cos(angle) * ropeLength + 32;
 
       context.save();
-      context.strokeStyle = "#73f2df";
+      context.strokeStyle = IS_SPIDER ? "#e9fbff" : "#73f2df";
       context.lineWidth = 3;
-      context.shadowColor = "#5cf4de";
+      context.shadowColor = IS_SPIDER ? "#7cc9ff" : "#5cf4de";
       context.shadowBlur = 8;
       context.beginPath();
       context.moveTo(pivotX, pivotY);
@@ -4687,7 +5485,9 @@ class RooftopGame {
       if (retract < 1) {
         const handX = batX + 21;
         const handY = batFeet - 39;
-        context.strokeStyle = `rgba(115, 242, 223, ${1 - retract})`;
+        context.strokeStyle = IS_SPIDER
+          ? `rgba(230, 248, 255, ${1 - retract})`
+          : `rgba(115, 242, 223, ${1 - retract})`;
         context.lineWidth = 3;
         context.beginPath();
         context.moveTo(pivotX, pivotY);
