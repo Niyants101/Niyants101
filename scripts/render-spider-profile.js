@@ -7,6 +7,9 @@ const HEIGHT = 416;
 const FPS = 30;
 const DURATION = 7.2;
 const FRAME_COUNT = Math.round(FPS * DURATION);
+const SIGNAL_CENTER_X = 736;
+const SIGNAL_CENTER_Y = 72;
+const SIGNAL_SIZE = 96;
 const projectRoot = path.resolve(__dirname, "..");
 const frameDirectory = process.env.SPIDER_FRAME_DIR || path.join(__dirname, ".spider-frames");
 const signal = fs.readFileSync(path.join(projectRoot, "gateway", "spider-signal.png")).toString("base64");
@@ -174,10 +177,10 @@ function frameSvg(frameIndex) {
   <rect width="960" height="416" rx="16" fill="url(#sky)"/>
   <g fill="#aabfff" opacity=".48"><circle cx="470" cy="38" r="1.5"/><circle cx="575" cy="112" r="1"/><circle cx="740" cy="41" r="1.5"/><circle cx="913" cy="145" r="1"/></g>
   ${buildings(farOffset, 0)}${buildings(nearOffset, 1)}
-  <circle cx="854" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
-  <image href="data:image/png;base64,${signal}" x="800" y="18" width="108" height="108"/>
-  <g fill="#080a18"><rect x="315" y="80" width="90" height="282"/><rect x="635" y="70" width="90" height="292"/><rect x="930" y="80" width="30" height="282"/></g>
-  <g fill="#3a3158"><rect x="330" y="112" width="14" height="22"/><rect x="660" y="102" width="14" height="22"/><rect x="692" y="102" width="14" height="22"/><rect x="942" y="112" width="12" height="22"/></g>
+  <circle cx="${SIGNAL_CENTER_X}" cy="${SIGNAL_CENTER_Y}" r="75" fill="url(#signal)" filter="url(#soft)"/>
+  <image href="data:image/png;base64,${signal}" x="${SIGNAL_CENTER_X - SIGNAL_SIZE / 2}" y="${SIGNAL_CENTER_Y - SIGNAL_SIZE / 2}" width="${SIGNAL_SIZE}" height="${SIGNAL_SIZE}"/>
+  <g fill="#080a18"><rect x="315" y="80" width="90" height="282"/><rect x="590" y="70" width="90" height="292"/><rect x="930" y="80" width="30" height="282"/></g>
+  <g fill="#3a3158"><rect x="330" y="112" width="14" height="22"/><rect x="615" y="102" width="14" height="22"/><rect x="650" y="102" width="14" height="22"/><rect x="942" y="112" width="12" height="22"/></g>
   <g stroke="#f1fbff" stroke-width="2"><path d="M360 80V54"/><path d="M680 70V44"/><path d="M1014 80V54"/></g>
   ${webLines(hero)}${spiderDrone(drone)}${spiderHero(hero)}
   <path d="M0 378h150l25-27h210l22 27h180l30-36h190l26 36h147v38H0z" fill="#04040c"/>

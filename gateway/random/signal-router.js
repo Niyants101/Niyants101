@@ -4,8 +4,8 @@
   if (root) root.NiyantSignalRouter = router;
 }(typeof globalThis === "object" ? globalThis : this, () => {
   const SIGNALS = Object.freeze([
-    Object.freeze({ theme: "batman", x: 824, y: 72, radius: 28, destination: "../" }),
-    Object.freeze({ theme: "spider", x: 884, y: 72, radius: 28, destination: "../spider/" }),
+    Object.freeze({ theme: "batman", x: 855, y: 74, radius: 64, destination: "../" }),
+    Object.freeze({ theme: "spider", x: 736, y: 72, radius: 49, destination: "../spider/" }),
   ]);
 
   function profileImageWidth(viewportWidth) {
