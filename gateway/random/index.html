@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Niyant Hero Run</title>
+  <meta name="description" content="Unlock a randomly selected rooftop pursuit hidden inside Niyant's GitHub profile.">
+  <link rel="stylesheet" href="../style.css?v=20260909-github-random-v1">
+  <script>
+    (() => {
+      const coordinates = location.search.slice(1).match(/^(\d+),(\d+)$/);
+      if (!coordinates) return;
+
+      const clickedX = Number(coordinates[1]);
+      const clickedY = Number(coordinates[2]);
+      const displayedWidth = Math.min(840, Math.max(280, window.innerWidth - 32));
+      const scale = displayedWidth / 960;
+      const nativeX = clickedX / scale;
+      const nativeY = clickedY / scale;
+      const batSignal = Math.hypot(nativeX - 854, nativeY - 72) <= 60;
+      const spiderSignal = Math.hypot(nativeX - 520, nativeY - 72) <= 58;
+      const originalQuery = location.search;
+
+      document.documentElement.style.visibility = "hidden";
+      if (batSignal) location.replace(`../${originalQuery}`);
+      else if (spiderSignal) location.replace(`../spider/${originalQuery}`);
+      else location.replace("https://github.com/Niyants101");
+    })();
+  </script>
+</head>
+<body data-theme="batman">
+  <main class="gate" id="gate">
+    <a class="gate-profile-button" href="https://github.com/Niyants101" aria-label="Return to GitHub profile">← PROFILE</a>
+    <img class="city" id="gateCity" src="../night-shift.gif" alt="">
+    <div class="rain"></div>
+    <div class="veil"></div>
+    <section class="terminal" id="terminal" aria-label="Rooftop access terminal">
+      <img class="logo" id="gateLogo" src="../bat-signal.png" alt="Bat Signal">
+      <h1>IDENTITY REQUIRED</h1>
+      <form class="gate-form" id="gateForm">
+        <label for="code">ACCESS CODE</label>
+        <div class="code-row">
+          <input id="code" inputmode="numeric" maxlength="3" placeholder="•••" autocomplete="off">
+          <button id="enter" disabled>ENTER</button>
+        </div>
+        <p class="message" id="message" aria-live="assertive">AWAITING CREDENTIALS</p>
+      </form>
+    </section>
+    <div class="flash"><img id="flashLogo" src="../bat-signal.png" alt=""></div>
+  </main>
+
+  <main class="runner hidden" id="runner">
+    <canvas class="runner-canvas" id="canvas" width="960" height="540" aria-label="Batman rooftop runner game"></canvas>
+
+    <header class="hud" aria-label="Game status">
+      <div class="player-status">
+        <button class="return-button" id="returnButton" type="button" aria-label="Return to GitHub profile">← PROFILE</button>
+        <div class="hearts" id="hearts" role="status" aria-label="Batman health: 3 hearts">♥ ♥ ♥</div>
+      </div>
+      <div class="run-title">
+        <span id="runTitle">ROOFTOP RUN</span>
+        <small id="phaseLabel">SWINGING IN</small>
+      </div>
+      <div class="high-score">
+        <small>HIGH SCORE</small>
+        <strong id="highScore">000000</strong>
+      </div>
+    </header>
+
+    <div class="distance"><span>DISTANCE</span><strong id="score">000000</strong></div>
+    <div class="intro-copy" id="introCopy">ROOFTOP APPROACH</div>
+
+    <section class="tutorial hidden" id="tutorial" aria-live="polite">
+      <small><span>FIELD TRAINING</span><span id="tutorialProgress">1 / 5</span></small>
+      <strong id="tutorialTitle">JUMP</strong>
+      <div class="tutorial-keys" id="tutorialKeys"></div>
+      <p id="tutorialDetail"></p>
+    </section>
+
+    <div class="help hidden" id="help">
+      <span>W / ↑ JUMP</span>
+      <span id="throwHelp">SPACE THROW</span>
+      <span>S / ↓ DUCK</span>
+      <span>A D / ← → MOVE</span>
+    </div>
+
+    <section class="gameover hidden" id="gameover" role="dialog" aria-label="Run ended">
+      <p id="gameoverLabel">MISSION INTERRUPTED</p>
+      <h1>RUN ENDED</h1>
+      <div class="results">
+        <span>SCORE <strong id="finalScore">000000</strong></span>
+        <span>BEST <strong id="finalBest">000000</strong></span>
+      </div>
+      <button id="restart" type="button">RUN AGAIN</button>
+      <small>PRESS ENTER R OR SPACE</small>
+    </section>
+
+    <div class="touch-controls" aria-label="Touch controls">
+      <button data-control="left" aria-label="Move left">←</button>
+      <button data-control="jump">JUMP</button>
+      <button data-control="throw" id="touchThrow">THROW</button>
+      <button data-control="down">DUCK</button>
+      <button data-control="right" aria-label="Move right">→</button>
+    </div>
+  </main>
+
+  <script src="random-theme.js?v=20260909-github-random-v1"></script>
+  <script>
+    (() => {
+      const theme = window.NiyantThemeRandomizer.chooseRandomTheme();
+      const spider = theme === "spider";
+      const settings = spider ? {
+        pageTitle: "Niyant Webline Run",
+        city: "../../assets/spider-night-shift.gif",
+        logo: "../spider-signal.png",
+        logoAlt: "Spider Man mask signal",
+        terminalLabel: "Webline access terminal",
+        canvasLabel: "Spider Man rooftop runner game",
+        healthLabel: "Spider Man health: 3 hearts",
+        runTitle: "WEBLINE RUN",
+        throwHelp: "SPACE WEB",
+        touchThrow: "WEB",
+        gameoverLabel: "CHASE INTERRUPTED",
+      } : {
+        pageTitle: "Niyant Rooftop Run",
+        city: "../night-shift.gif",
+        logo: "../bat-signal.png",
+        logoAlt: "Bat Signal",
+        terminalLabel: "Rooftop access terminal",
+        canvasLabel: "Batman rooftop runner game",
+        healthLabel: "Batman health: 3 hearts",
+        runTitle: "ROOFTOP RUN",
+        throwHelp: "SPACE THROW",
+        touchThrow: "THROW",
+        gameoverLabel: "MISSION INTERRUPTED",
+      };
+
+      document.body.dataset.theme = theme;
+      document.title = settings.pageTitle;
+      document.getElementById("gateCity").src = settings.city;
+      document.getElementById("gateLogo").src = settings.logo;
+      document.getElementById("gateLogo").alt = settings.logoAlt;
+      document.getElementById("flashLogo").src = settings.logo;
+      document.getElementById("terminal").setAttribute("aria-label", settings.terminalLabel);
+      document.getElementById("canvas").setAttribute("aria-label", settings.canvasLabel);
+      document.getElementById("hearts").setAttribute("aria-label", settings.healthLabel);
+      document.getElementById("runTitle").textContent = settings.runTitle;
+      document.getElementById("throwHelp").textContent = settings.throwHelp;
+      document.getElementById("touchThrow").textContent = settings.touchThrow;
+      document.getElementById("gameoverLabel").textContent = settings.gameoverLabel;
+
+      const game = document.createElement("script");
+      game.src = "../game.js?v=20260909-github-random-v1";
+      document.body.appendChild(game);
+    })();
+  </script>
+</body>
+</html>

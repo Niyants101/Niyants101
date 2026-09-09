@@ -190,12 +190,14 @@ const SPIDER_VILLAINS = {
   },
 };
 
+const GAME_SCRIPT_BASE = new URL("./", document.currentScript?.src || window.location.href);
+
 const THEME_CONFIGS = Object.freeze({
   batman: {
     heroName: "Batman",
     projectile: "BATARANG",
     projectileShort: "BATS",
-    signalAsset: "bat-signal.png",
+    signalAsset: new URL("bat-signal.png", GAME_SCRIPT_BASE).href,
     highScoreKey: "niyant-rooftop-high-score",
     tutorialKey: "niyant-rooftop-tutorial-v3-complete",
     introLabel: "ROOFTOP APPROACH",
@@ -207,7 +209,7 @@ const THEME_CONFIGS = Object.freeze({
     heroName: "Spider Man",
     projectile: "WEB SHOT",
     projectileShort: "WEBS",
-    signalAsset: "../spider-signal.svg",
+    signalAsset: new URL("spider-signal.png", GAME_SCRIPT_BASE).href,
     highScoreKey: "niyant-webline-high-score",
     tutorialKey: "niyant-webline-tutorial-v1-complete",
     introLabel: "WEBLINE APPROACH",
@@ -5246,11 +5248,29 @@ class RooftopGame {
 
   drawSpiderMan(x, feet, duckAmount, grounded, motion = 1) {
     const context = this.context;
-    const runCycle = grounded ? Math.sin(this.elapsed * 17) * motion * (1 - duckAmount) : 0.25;
-    const bodyLean = grounded ? Math.sin(this.elapsed * 8.5) * 0.025 * motion : -0.12;
-    const throwReach = this.throwAnimation > 0
-      ? Math.sin((this.throwAnimation / 0.18) * Math.PI) * 22
+    const runCycle = grounded
+      ? Math.sin(this.elapsed * 15.5) * motion * (1 - duckAmount)
+      : 0.28;
+    const bodyBob = grounded
+      ? Math.abs(Math.sin(this.elapsed * 15.5)) * 1.4 * motion * (1 - duckAmount)
       : 0;
+    const throwProgress = this.throwAnimation > 0
+      ? Math.sin((this.throwAnimation / 0.18) * Math.PI)
+      : 0;
+    const frontFootX = 7 + runCycle * 8;
+    const backFootX = -7 - runCycle * 8;
+    const frontKneeX = 6 - runCycle * 3;
+    const backKneeX = -6 + runCycle * 3;
+    const frontWristX = throwProgress > 0
+      ? 31 + throwProgress * 18
+      : 21 - runCycle * 1.5;
+    const frontWristY = throwProgress > 0
+      ? -45 - throwProgress * 3
+      : -35 + runCycle * 1.2;
+    const frontElbowX = throwProgress > 0
+      ? 24 + throwProgress * 9
+      : 18 + runCycle * 2;
+    const frontElbowY = throwProgress > 0 ? -47 : -42 + runCycle * 2;
 
     context.save();
     if (
@@ -5258,9 +5278,9 @@ class RooftopGame {
       this.bossInvulnerability > 0 &&
       Math.sin(this.elapsed * 42) > -0.1
     ) context.globalAlpha = 0.38;
-    context.translate(x + duckAmount * 7, feet);
+    context.translate(x + duckAmount * 7, feet - bodyBob);
     context.scale(1 + duckAmount * 0.1, 1 - duckAmount * 0.39);
-    context.rotate(bodyLean);
+    context.rotate(grounded ? 0.035 : -0.095);
 
     context.fillStyle = "rgba(0,0,0,.28)";
     context.beginPath();
@@ -5268,95 +5288,147 @@ class RooftopGame {
     context.fill();
 
     context.lineCap = "round";
-    context.strokeStyle = "#174a92";
-    context.lineWidth = 9;
-    context.beginPath();
-    context.moveTo(-7, -16);
-    context.lineTo(-12 - runCycle * 9, -1);
-    context.moveTo(8, -16);
-    context.lineTo(14 + runCycle * 9, -1);
-    context.stroke();
+    context.lineJoin = "round";
 
-    context.fillStyle = "#194b95";
-    context.beginPath();
-    context.moveTo(-15, -53);
-    context.lineTo(15, -53);
-    context.lineTo(19, -17);
-    context.lineTo(-18, -17);
-    context.closePath();
-    context.fill();
-    context.fillStyle = "#cf2943";
-    context.beginPath();
-    context.moveTo(-13, -55);
-    context.lineTo(13, -55);
-    context.lineTo(10, -28);
-    context.lineTo(0, -23);
-    context.lineTo(-10, -28);
-    context.closePath();
-    context.fill();
-
-    context.strokeStyle = "#d52b45";
+    // Back arm stays compact and pumps naturally instead of windmilling.
+    context.strokeStyle = "#123b7a";
     context.lineWidth = 8;
     context.beginPath();
-    context.moveTo(-12, -49);
-    context.lineTo(-28 - runCycle * 4, -34 + runCycle * 2);
-    context.moveTo(12, -49);
-    context.lineTo(27 + runCycle * 4 + throwReach, -36 - throwReach * 0.18);
+    context.moveTo(-11, -48);
+    context.lineTo(-20 - runCycle * 2, -38 - runCycle * 3);
+    context.lineTo(-17 + runCycle * 1.5, -26 - runCycle);
     context.stroke();
+    context.strokeStyle = "#d82c47";
+    context.lineWidth = 7;
+    context.beginPath();
+    context.moveTo(-18 + runCycle * 1.5, -27 - runCycle);
+    context.lineTo(-14 + runCycle * 1.5, -23 - runCycle);
+    context.stroke();
+
+    // Athletic two joint leg pose gives the run a readable stride.
+    context.strokeStyle = "#123b7a";
+    context.lineWidth = 9;
+    context.beginPath();
+    context.moveTo(-6, -21);
+    context.lineTo(backKneeX, -10 - Math.max(0, runCycle) * 2);
+    context.lineTo(backFootX, -1);
+    context.moveTo(7, -21);
+    context.lineTo(frontKneeX, -10 - Math.max(0, -runCycle) * 2);
+    context.lineTo(frontFootX, -1);
+    context.stroke();
+    context.strokeStyle = "#d82c47";
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(backFootX - 5, -1);
+    context.lineTo(backFootX + 5, -1);
+    context.moveTo(frontFootX - 5, -1);
+    context.lineTo(frontFootX + 6, -1);
+    context.stroke();
+
+    // Tapered torso, shoulder panels, and neck form one connected silhouette.
+    context.fillStyle = "#174a92";
+    context.beginPath();
+    context.moveTo(-14, -54);
+    context.quadraticCurveTo(0, -59, 14, -53);
+    context.lineTo(17, -25);
+    context.quadraticCurveTo(0, -17, -17, -25);
+    context.closePath();
+    context.fill();
     context.fillStyle = "#d52b45";
     context.beginPath();
-    context.arc(29 + runCycle * 4 + throwReach, -36 - throwReach * 0.18, 5, 0, Math.PI * 2);
+    context.moveTo(-13, -53);
+    context.quadraticCurveTo(0, -58, 13, -52);
+    context.lineTo(10, -33);
+    context.lineTo(0, -28);
+    context.lineTo(-10, -33);
+    context.closePath();
     context.fill();
 
     context.fillStyle = "#d82c47";
+    context.fillRect(-6, -62, 12, 11);
+
+    // Front arm has a controlled runner pose and only extends for a real web shot.
+    context.strokeStyle = "#d82c47";
+    context.lineWidth = 8;
     context.beginPath();
-    context.ellipse(0, -66, 15, 19, 0, 0, Math.PI * 2);
-    context.fill();
-    context.strokeStyle = "#3a1423";
+    context.moveTo(11, -49);
+    context.lineTo(frontElbowX, frontElbowY);
+    context.lineTo(frontWristX, frontWristY);
+    context.stroke();
+    context.strokeStyle = "#101827";
     context.lineWidth = 1.2;
     context.beginPath();
+    context.moveTo(frontWristX - 2, frontWristY - 3);
+    context.lineTo(frontWristX + 3, frontWristY + 2);
+    context.stroke();
+
+    // Mask is anchored directly into the neck with sharper, expressive lenses.
+    context.fillStyle = "#d82c47";
+    context.strokeStyle = "#3a1423";
+    context.lineWidth = 1.6;
+    context.beginPath();
     context.moveTo(0, -84);
-    context.lineTo(0, -49);
-    context.moveTo(-13, -72);
-    context.quadraticCurveTo(0, -62, 13, -72);
+    context.bezierCurveTo(-10, -84, -15, -77, -14, -67);
+    context.quadraticCurveTo(-12, -58, 0, -56);
+    context.quadraticCurveTo(12, -58, 14, -67);
+    context.bezierCurveTo(15, -77, 10, -84, 0, -84);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    context.strokeStyle = "#471522";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(0, -84);
+    context.lineTo(0, -57);
+    context.moveTo(-13, -75);
+    context.quadraticCurveTo(0, -67, 13, -75);
     context.moveTo(-11, -79);
-    context.quadraticCurveTo(0, -70, 11, -79);
-    context.moveTo(-14, -64);
-    context.quadraticCurveTo(0, -55, 14, -64);
+    context.quadraticCurveTo(0, -73, 11, -79);
+    context.moveTo(-13, -67);
+    context.quadraticCurveTo(0, -60, 13, -67);
     context.stroke();
 
     context.fillStyle = "#f5fbff";
     context.strokeStyle = "#101a2c";
-    context.lineWidth = 2;
+    context.lineWidth = 2.4;
     context.beginPath();
-    context.moveTo(-11, -72);
-    context.quadraticCurveTo(-4, -70, -3, -61);
-    context.quadraticCurveTo(-10, -63, -11, -72);
+    context.moveTo(-11, -75);
+    context.quadraticCurveTo(-4, -73, -2, -63);
+    context.quadraticCurveTo(-9, -65, -11, -75);
     context.closePath();
     context.fill();
     context.stroke();
     context.beginPath();
-    context.moveTo(11, -72);
-    context.quadraticCurveTo(4, -70, 3, -61);
-    context.quadraticCurveTo(10, -63, 11, -72);
+    context.moveTo(11, -75);
+    context.quadraticCurveTo(4, -73, 2, -63);
+    context.quadraticCurveTo(9, -65, 11, -75);
     context.closePath();
     context.fill();
     context.stroke();
 
+    // Compact black chest spider keeps the suit readable at game scale.
     context.strokeStyle = "#101827";
-    context.lineWidth = 1.4;
+    context.lineWidth = 1.25;
     context.beginPath();
-    context.arc(0, -41, 9, 0.25, Math.PI - 0.25);
-    context.moveTo(0, -48);
-    context.lineTo(0, -29);
-    context.moveTo(-6, -44);
-    context.lineTo(6, -34);
-    context.moveTo(6, -44);
-    context.lineTo(-6, -34);
+    context.moveTo(0, -49);
+    context.lineTo(0, -34);
+    context.moveTo(-2, -45);
+    context.lineTo(-8, -49);
+    context.moveTo(2, -45);
+    context.lineTo(8, -49);
+    context.moveTo(-2, -41);
+    context.lineTo(-8, -37);
+    context.moveTo(2, -41);
+    context.lineTo(8, -37);
+    context.moveTo(-2, -37);
+    context.lineTo(-6, -31);
+    context.moveTo(2, -37);
+    context.lineTo(6, -31);
     context.stroke();
     context.fillStyle = "#111827";
     context.beginPath();
-    context.arc(0, -39, 2.8, 0, Math.PI * 2);
+    context.ellipse(0, -41, 2.4, 4.5, 0, 0, Math.PI * 2);
     context.fill();
     context.restore();
   }

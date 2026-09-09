@@ -9,7 +9,7 @@ const DURATION = 7.2;
 const FRAME_COUNT = Math.round(FPS * DURATION);
 const projectRoot = path.resolve(__dirname, "..");
 const frameDirectory = process.env.SPIDER_FRAME_DIR || path.join(__dirname, ".spider-frames");
-const signal = fs.readFileSync(path.join(projectRoot, "gateway", "spider-signal.svg")).toString("base64");
+const signal = fs.readFileSync(path.join(projectRoot, "gateway", "spider-signal.png")).toString("base64");
 
 fs.mkdirSync(frameDirectory, { recursive: true });
 
@@ -135,13 +135,14 @@ function spiderHero(point) {
   const draw = (x) => `<g transform="translate(${x.toFixed(1)} ${point.y.toFixed(1)}) scale(.8)">
     <path d="M-11 52l-11 34m33-34l12 34" stroke="#17478f" stroke-width="11" stroke-linecap="round"/>
     <path d="M-25 87h17m24 0h18" stroke="#d82d49" stroke-width="5"/>
+    <path d="M-7-5h14V9H-7z" fill="#d72e49"/>
     <path d="M-15 5h30l8 49L0 68l-22-14z" fill="#174990" stroke="#6d8bc4" stroke-width="2"/>
     <path d="M-14 7h28l-4 31L0 44-10 38z" fill="#d72e49"/>
     <path d="M-12 12l-27 20m51-20l27-18" stroke="#d72e49" stroke-width="9" stroke-linecap="round"/>
     <path d="M0 13v25m-8-19l16 12m0-12L-8 31" stroke="#1a1724" stroke-width="1.5"/>
-    <path d="M-17-27c0-15 8-24 17-24s17 9 17 24v15H-17z" fill="#d72e49" stroke="#4c1b2a" stroke-width="2"/>
-    <g fill="#f5fbff" stroke="#11182a" stroke-width="2"><path d="M-12-34c6 1 9 4 10 12-6-1-9-5-10-12z"/><path d="M12-34c-6 1-9 4-10 12 6-1 9-5 10-12z"/></g>
-    <g stroke="#541b2b" stroke-width="1" fill="none"><path d="M0-49v36M-15-39Q0-28 15-39M-16-27Q0-18 16-27"/></g>
+    <path d="M-17-15c0-15 8-24 17-24s17 9 17 24V0H-17z" fill="#d72e49" stroke="#4c1b2a" stroke-width="2"/>
+    <g fill="#f5fbff" stroke="#11182a" stroke-width="2"><path d="M-12-22c6 1 9 4 10 12-6-1-9-5-10-12z"/><path d="M12-22c-6 1-9 4-10 12 6-1 9-5 10-12z"/></g>
+    <g stroke="#541b2b" stroke-width="1" fill="none"><path d="M0-37V-1M-15-27Q0-16 15-27M-16-15Q0-6 16-15"/></g>
   </g>`;
   return draw(point.x - WIDTH) + draw(point.x) + draw(point.x + WIDTH);
 }
@@ -173,8 +174,8 @@ function frameSvg(frameIndex) {
   <rect width="960" height="416" rx="16" fill="url(#sky)"/>
   <g fill="#aabfff" opacity=".48"><circle cx="470" cy="38" r="1.5"/><circle cx="575" cy="112" r="1"/><circle cx="740" cy="41" r="1.5"/><circle cx="913" cy="145" r="1"/></g>
   ${buildings(farOffset, 0)}${buildings(nearOffset, 1)}
-  <circle cx="852" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
-  <image href="data:image/svg+xml;base64,${signal}" x="797" y="21" width="110" height="104"/>
+  <circle cx="520" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
+  <image href="data:image/png;base64,${signal}" x="466" y="18" width="108" height="108"/>
   <g fill="#080a18"><rect x="315" y="80" width="90" height="282"/><rect x="635" y="70" width="90" height="292"/><rect x="930" y="80" width="30" height="282"/></g>
   <g fill="#3a3158"><rect x="330" y="112" width="14" height="22"/><rect x="660" y="102" width="14" height="22"/><rect x="692" y="102" width="14" height="22"/><rect x="942" y="112" width="12" height="22"/></g>
   <g stroke="#f1fbff" stroke-width="2"><path d="M360 80V54"/><path d="M680 70V44"/><path d="M1014 80V54"/></g>

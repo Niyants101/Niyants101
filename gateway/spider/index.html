@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Niyant Webline Run</title>
   <meta name="description" content="Unlock a web slinging city pursuit hidden inside Niyant's GitHub profile.">
-  <link rel="stylesheet" href="../style.css?v=20260906-dual-hero-v1">
+  <link rel="stylesheet" href="../style.css?v=20260909-spider-polish-v2">
   <script>
     (() => {
       const coordinates = location.search.slice(1).match(/^(\d+),(\d+)$/);
@@ -15,11 +15,9 @@
       const clickedY = Number(coordinates[2]);
       const displayedWidth = Math.min(840, Math.max(280, window.innerWidth - 32));
       const scale = displayedWidth / 960;
-      const hitSignal =
-        clickedX >= 790 * scale &&
-        clickedX <= 910 * scale &&
-        clickedY >= 15 * scale &&
-        clickedY <= 135 * scale;
+      const nativeX = clickedX / scale;
+      const nativeY = clickedY / scale;
+      const hitSignal = Math.hypot(nativeX - 520, nativeY - 72) <= 54;
 
       if (!hitSignal) {
         document.documentElement.style.visibility = "hidden";
@@ -35,7 +33,7 @@
     <div class="rain"></div>
     <div class="veil"></div>
     <section class="terminal" aria-label="Webline access terminal">
-      <img class="logo" src="../spider-signal.svg" alt="Spider Signal">
+      <img class="logo" src="../spider-signal.png" alt="Spider Man mask signal">
       <h1>IDENTITY REQUIRED</h1>
       <form class="gate-form" id="gateForm">
         <label for="code">ACCESS CODE</label>
@@ -46,7 +44,7 @@
         <p class="message" id="message" aria-live="assertive">AWAITING CREDENTIALS</p>
       </form>
     </section>
-    <div class="flash"><img src="../spider-signal.svg" alt=""></div>
+    <div class="flash"><img src="../spider-signal.png" alt=""></div>
   </main>
 
   <main class="runner hidden" id="runner">
@@ -104,6 +102,6 @@
     </div>
   </main>
 
-  <script src="../game.js?v=20260906-dual-hero-v1"></script>
+  <script src="../game.js?v=20260909-spider-polish-v2"></script>
 </body>
 </html>

@@ -1,51 +1,52 @@
 import assert from "node:assert/strict";
 import { copyFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = resolve(import.meta.dirname, "..");
-const temporaryRoot = mkdtempSync(join(tmpdir(), "niyant-profile-rotation-"));
+const testDirectory = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(testDirectory, "..");
+const temporaryRoot = mkdtempSync(join(tmpdir(), "niyant-profile-banner-"));
 const readmePath = join(temporaryRoot, "README.md");
 const statePath = join(temporaryRoot, "state.json");
 const scriptPath = join(projectRoot, "scripts", "rotate-profile-theme.mjs");
+const randomGateway = "https://niyants101.github.io/Niyants101/gateway/random/";
 
 copyFileSync(join(projectRoot, "README.md"), readmePath);
 copyFileSync(join(projectRoot, ".profile-theme.json"), statePath);
 
-let previousTheme = null;
-let observedStreak = 0;
-
-for (let rotation = 0; rotation < 24; rotation += 1) {
+function runRotation(randomBit) {
   const result = spawnSync(process.execPath, [scriptPath], {
     env: {
       ...process.env,
       PROFILE_THEME: "random",
+      PROFILE_RANDOM_BIT: String(randomBit),
+      PROFILE_NOW: "2026-09-09T12:00:00.000Z",
       PROFILE_README_FILE: readmePath,
       PROFILE_STATE_FILE: statePath,
     },
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
-
-  const state = JSON.parse(readFileSync(statePath, "utf8"));
-  const readme = readFileSync(readmePath, "utf8");
-  if (state.current === previousTheme) observedStreak += 1;
-  else observedStreak = 1;
-  previousTheme = state.current;
-
-  assert.ok(observedStreak <= 2, "a theme never appears more than twice in a row");
-  assert.equal((readme.match(/PROFILE_THEME_START/g) || []).length, 1);
-  assert.equal((readme.match(/PROFILE_THEME_END/g) || []).length, 1);
-
-  if (state.current === "spider") {
-    assert.match(readme, /assets\/spider-night-shift\.gif/);
-    assert.match(readme, /gateway\/spider\//);
-  } else {
-    assert.match(readme, /assets\/night-shift-final\.gif/);
-    assert.match(readme, /Niyants101\/gateway\//);
-    assert.doesNotMatch(readme, /gateway\/spider\//);
-  }
+  return {
+    readme: readFileSync(readmePath, "utf8"),
+    state: JSON.parse(readFileSync(statePath, "utf8")),
+  };
 }
 
-process.stdout.write("PASS: timed profile theme rotation stays synchronized\n");
+let files = runRotation(0);
+assert.equal(files.state.current, "spider");
+assert.equal(files.state.lastRoll, 0);
+assert.match(files.readme, /assets\/spider-night-shift\.gif/);
+assert.ok(files.readme.includes(randomGateway));
+
+files = runRotation(1);
+assert.equal(files.state.current, "batman");
+assert.equal(files.state.lastRoll, 1);
+assert.match(files.readme, /assets\/night-shift-final\.gif/);
+assert.ok(files.readme.includes(randomGateway));
+assert.equal((files.readme.match(/PROFILE_THEME_START/g) || []).length, 1);
+assert.equal((files.readme.match(/PROFILE_THEME_END/g) || []).length, 1);
+
+process.stdout.write("PASS: the optional static banner selector always links to the random gateway\n");

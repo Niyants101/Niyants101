@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "niyant-random-profile",
+  "main": "./profile-randomizer/worker.mjs",
+  "compatibility_date": "2026-09-09",
+  "assets": {
+    "directory": "./assets",
+    "binding": "ASSETS",
+    "run_worker_first": ["/profile.gif"]
+  }
+}

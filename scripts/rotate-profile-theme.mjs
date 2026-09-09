@@ -8,43 +8,45 @@ const projectRoot = resolve(scriptDirectory, "..");
 const readmePath = resolve(projectRoot, process.env.PROFILE_README_FILE || "README.md");
 const statePath = resolve(projectRoot, process.env.PROFILE_STATE_FILE || ".profile-theme.json");
 const requestedTheme = (process.env.PROFILE_THEME || "random").toLowerCase();
+const randomGateway = "https://niyants101.github.io/Niyants101/gateway/random/";
 
 const themes = {
   batman: {
-    destination: "https://niyants101.github.io/Niyants101/gateway/",
-    title: "Find the Bat Signal",
+    title: "Enter the random hero signal",
     image: "./assets/night-shift-final.gif",
     alt: "Niyant's Batman Night Shift",
   },
   spider: {
-    destination: "https://niyants101.github.io/Niyants101/gateway/spider/",
-    title: "Find the Spider Signal",
+    title: "Enter the random hero signal",
     image: "./assets/spider-night-shift.gif",
     alt: "Niyant's Spider Man Night Shift",
   },
 };
 
-let state = { current: "batman", streak: 0 };
-try {
-  state = { ...state, ...JSON.parse(readFileSync(statePath, "utf8")) };
-} catch {
-  // A missing or invalid state file simply starts a new rotation.
+if (requestedTheme !== "random" && !Object.hasOwn(themes, requestedTheme)) {
+  throw new Error("PROFILE_THEME must be random, batman, or spider");
 }
 
-let nextTheme;
-if (Object.hasOwn(themes, requestedTheme)) {
-  nextTheme = requestedTheme;
-} else if (state.streak >= 2 && Object.hasOwn(themes, state.current)) {
-  nextTheme = state.current === "batman" ? "spider" : "batman";
+let randomBit;
+if (process.env.PROFILE_RANDOM_BIT === undefined) {
+  randomBit = randomInt(2);
 } else {
-  nextTheme = randomInt(2) === 0 ? "batman" : "spider";
+  randomBit = Number(process.env.PROFILE_RANDOM_BIT);
+  if (randomBit !== 0 && randomBit !== 1) {
+    throw new Error("PROFILE_RANDOM_BIT must be 0 or 1");
+  }
 }
 
-const nextStreak = nextTheme === state.current ? state.streak + 1 : 1;
-const theme = themes[nextTheme];
+const selectedTheme = requestedTheme === "random"
+  ? (randomBit === 1 ? "batman" : "spider")
+  : requestedTheme;
+const theme = themes[selectedTheme];
+const now = process.env.PROFILE_NOW ? new Date(process.env.PROFILE_NOW) : new Date();
+if (Number.isNaN(now.getTime())) throw new Error("PROFILE_NOW must be a valid date");
+
 const profileBlock = [
   "<!-- PROFILE_THEME_START -->",
-  `<div align="center"><a href="${theme.destination}" title="${theme.title}"><img width="840" height="364" src="${theme.image}" alt="${theme.alt}" ismap></a></div>`,
+  `<div align="center"><a href="${randomGateway}" title="${theme.title}"><img width="840" height="364" src="${theme.image}" alt="${theme.alt}" ismap></a></div>`,
   "<!-- PROFILE_THEME_END -->",
 ].join("\n");
 
@@ -56,9 +58,11 @@ const nextReadme = markerPattern.test(currentReadme)
 
 writeFileSync(readmePath, nextReadme.endsWith("\n") ? nextReadme : `${nextReadme}\n`);
 writeFileSync(statePath, `${JSON.stringify({
-  current: nextTheme,
-  streak: nextStreak,
-  updatedAt: new Date().toISOString(),
+  current: selectedTheme,
+  lastRoll: selectedTheme === "batman" ? 1 : 0,
+  updatedAt: now.toISOString(),
 }, null, 2)}\n`);
 
-process.stdout.write(`Profile theme selected: ${nextTheme}\n`);
+process.stdout.write(
+  `Static profile banner selected: ${selectedTheme}. The linked gateway rerolls on every load.\n`,
+);
