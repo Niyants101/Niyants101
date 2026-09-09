@@ -1,0 +1,55 @@
+name: Connect random profile image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_url:
+        description: Full Cloudflare Worker URL ending in /profile.gif
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out profile repository
+        uses: actions/checkout@v4
+
+      - name: Verify both Cloudflare animations
+        env:
+          PROFILE_IMAGE_URL: ${{ inputs.image_url }}
+        run: |
+          node --input-type=module <<'NODE'
+          for (const theme of ["batman", "spider"]) {
+            const response = await fetch(`${process.env.PROFILE_IMAGE_URL}?theme=${theme}`, {
+              method: "HEAD",
+              cache: "no-store",
+            });
+            if (!response.ok || response.headers.get("content-type") !== "image/gif") {
+              throw new Error(`${theme} animation is not available from the supplied Worker URL`);
+            }
+            if (response.headers.get("x-niyant-theme") !== theme) {
+              throw new Error(`${theme} verification returned the wrong theme`);
+            }
+          }
+          NODE
+
+      - name: Put the Worker image inside the profile README
+        env:
+          PROFILE_IMAGE_URL: ${{ inputs.image_url }}
+        run: node scripts/set-profile-worker-url.mjs
+
+      - name: Commit profile image URL
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "The profile already uses this URL"
+          else
+            git commit -m "Connect random profile animation"
+            git push
+          fi

@@ -1,37 +1,31 @@
-name: Rotate profile hero
+name: Choose static profile banner
 
 on:
-  schedule:
-    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       theme:
-        description: Profile theme to show now
+        description: Static teaser shown in the GitHub profile README
         required: true
-        default: random
+        default: batman
         type: choice
         options:
-          - random
           - batman
           - spider
+          - random
 
 permissions:
   contents: write
 
-concurrency:
-  group: profile-hero-rotation
-  cancel-in-progress: false
-
 jobs:
-  rotate:
+  choose:
     runs-on: ubuntu-latest
     steps:
       - name: Check out profile repository
         uses: actions/checkout@v4
 
-      - name: Select animation and matching game
+      - name: Choose static profile teaser
         env:
-          PROFILE_THEME: ${{ github.event.inputs.theme || 'random' }}
+          PROFILE_THEME: ${{ inputs.theme }}
         run: node scripts/rotate-profile-theme.mjs
 
       - name: Commit selection
@@ -42,6 +36,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No profile change needed"
           else
-            git commit -m "Rotate profile hero"
+            git commit -m "Choose static profile hero"
             git push
           fi
