@@ -15,6 +15,11 @@ const imageUrl = new URL(suppliedUrl);
 if (imageUrl.protocol !== "https:" || !imageUrl.pathname.endsWith("/profile.gif")) {
   throw new Error("The profile image URL must use HTTPS and end with /profile.gif");
 }
+imageUrl.hash = "";
+imageUrl.searchParams.set(
+  "v",
+  process.env.PROFILE_CACHE_VERSION || String(Date.now()),
+);
 
 const currentReadme = readFileSync(readmePath, "utf8");
 const markerPattern = /<!-- PROFILE_THEME_START -->[\s\S]*?<!-- PROFILE_THEME_END -->/;

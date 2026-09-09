@@ -1,15 +1,19 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");
-const temporaryRoot = mkdtempSync(join(tmpdir(), "niyant-profile-signals-"));
+const temporaryRoot = mkdtempSync(join(tmpdir(), "niyant-profile-animations-"));
 const spiderFrames = join(temporaryRoot, "spider-frames");
+const batmanFrames = join(temporaryRoot, "batman-frames");
 const batmanOutput = join(temporaryRoot, "night-shift-final.gif");
 const spiderOutput = join(temporaryRoot, "spider-night-shift.gif");
+const SOURCE_FPS = 30;
+const PROFILE_FPS = 24;
+const PROFILE_FRAME_COUNT = 173;
 
 function run(command, args, options = {}) {
   execFileSync(command, args, {
@@ -20,37 +24,34 @@ function run(command, args, options = {}) {
 }
 
 try {
+  mkdirSync(batmanFrames, { recursive: true });
   run(process.execPath, [join(scriptDirectory, "render-spider-profile.js")], {
     env: { ...process.env, SPIDER_FRAME_DIR: spiderFrames },
   });
 
-  const spiderArguments = ["-dispose", "Background"];
-  for (let frame = 0; frame < 216; frame += 1) {
-    const delay = frame % 3 === 1 ? "4" : "3";
-    spiderArguments.push(
-      "-delay",
-      delay,
-      join(spiderFrames, `frame-${String(frame).padStart(3, "0")}.png`),
-    );
-  }
-  spiderArguments.push("-layers", "Optimize", "-loop", "0", spiderOutput);
-  run("convert", spiderArguments);
-
   run("convert", [
     join(projectRoot, "gateway", "night-shift.gif"),
     "-coalesce",
-    "-fill", "rgba(232,255,251,0.96)",
-    "-stroke", "rgba(111,255,232,0.92)",
-    "-strokewidth", "1.4",
-    "-draw", "circle 824,72 829,72 line 824,56 824,64 line 824,80 824,88 line 808,72 816,72 line 832,72 840,72",
-    "-fill", "none",
-    "-stroke", "rgba(111,255,232,0.58)",
-    "-strokewidth", "1.8",
-    "-draw", "circle 824,72 836,72",
-    "-layers", "Optimize",
-    "-loop", "0",
-    batmanOutput,
+    join(batmanFrames, "frame-%03d.png"),
   ]);
+
+  function animationArguments(frameDirectory, output) {
+    const argumentsList = ["-dispose", "Background"];
+    for (let frame = 0; frame < PROFILE_FRAME_COUNT; frame += 1) {
+      const sourceFrame = Math.round(frame * SOURCE_FPS / PROFILE_FPS);
+      const delay = frame % 6 === 5 ? "5" : "4";
+      argumentsList.push(
+        "-delay",
+        delay,
+        join(frameDirectory, `frame-${String(sourceFrame).padStart(3, "0")}.png`),
+      );
+    }
+    argumentsList.push("-layers", "Optimize", "-loop", "0", output);
+    return argumentsList;
+  }
+
+  run("convert", animationArguments(spiderFrames, spiderOutput));
+  run("convert", animationArguments(batmanFrames, batmanOutput));
 
   renameSync(batmanOutput, join(projectRoot, "assets", "night-shift-final.gif"));
   renameSync(spiderOutput, join(projectRoot, "assets", "spider-night-shift.gif"));

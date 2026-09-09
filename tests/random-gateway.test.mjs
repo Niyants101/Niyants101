@@ -43,4 +43,4 @@ assert.match(gateway, /location\.replace\(destination/);
 assert.match(gateway, /https:\/\/github\.com\/Niyants101/);
 assert.match(rootEntry, /gateway\/random/);
 
-process.stdout.write("PASS: each signal glint routes to its matching game at every supported profile size\n");
+process.stdout.write("PASS: each invisible signal area routes to its matching game at every supported profile size\n");
