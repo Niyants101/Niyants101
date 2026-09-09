@@ -17,11 +17,16 @@ if (imageUrl.protocol !== "https:" || !imageUrl.pathname.endsWith("/profile.gif"
 }
 
 const currentReadme = readFileSync(readmePath, "utf8");
-const markerPattern = /(<!-- PROFILE_THEME_START -->[\s\S]*?<img\b[^>]*?\bsrc=")[^"]+("[^>]*>[\s\S]*?<!-- PROFILE_THEME_END -->)/;
+const markerPattern = /<!-- PROFILE_THEME_START -->[\s\S]*?<!-- PROFILE_THEME_END -->/;
 if (!markerPattern.test(currentReadme)) {
   throw new Error("Could not find the marked profile image in README.md");
 }
 
-const nextReadme = currentReadme.replace(markerPattern, `$1${imageUrl.href}$2`);
+const profileBlock = [
+  "<!-- PROFILE_THEME_START -->",
+  `<div align="center"><a href="https://niyants101.github.io/Niyants101/gateway/random/" title="Click the glowing hero signal"><img width="840" height="364" src="${imageUrl.href}" alt="Niyant's Random Hero Night Shift" ismap></a></div>`,
+  "<!-- PROFILE_THEME_END -->",
+].join("\n");
+const nextReadme = currentReadme.replace(markerPattern, profileBlock);
 writeFileSync(readmePath, nextReadme);
-process.stdout.write(`Profile README now uses ${imageUrl.href}\n`);
+process.stdout.write(`Profile README now uses ${imageUrl.href} with synchronized signal routing\n`);

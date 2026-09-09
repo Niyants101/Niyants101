@@ -176,6 +176,11 @@ function frameSvg(frameIndex) {
   ${buildings(farOffset, 0)}${buildings(nearOffset, 1)}
   <circle cx="854" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
   <image href="data:image/png;base64,${signal}" x="800" y="18" width="108" height="108"/>
+  <g fill="none" stroke="#ff9cad" stroke-linecap="round">
+    <circle cx="884" cy="72" r="12" stroke-width="1.8" opacity=".66"/>
+    <path d="M884 56v8m0 16v8m-16-16h8m16 0h8" stroke-width="1.4" opacity=".92"/>
+  </g>
+  <circle cx="884" cy="72" r="5" fill="#fff5f7" stroke="#ff6d84" stroke-width="1.4"/>
   <g fill="#080a18"><rect x="315" y="80" width="90" height="282"/><rect x="635" y="70" width="90" height="292"/><rect x="930" y="80" width="30" height="282"/></g>
   <g fill="#3a3158"><rect x="330" y="112" width="14" height="22"/><rect x="660" y="102" width="14" height="22"/><rect x="692" y="102" width="14" height="22"/><rect x="942" y="112" width="12" height="22"/></g>
   <g stroke="#f1fbff" stroke-width="2"><path d="M360 80V54"/><path d="M680 70V44"/><path d="M1014 80V54"/></g>
