@@ -17,14 +17,12 @@
       const scale = displayedWidth / 960;
       const nativeX = clickedX / scale;
       const nativeY = clickedY / scale;
-      const batSignal = Math.hypot(nativeX - 854, nativeY - 72) <= 60;
-      const spiderSignal = Math.hypot(nativeX - 520, nativeY - 72) <= 58;
-      const originalQuery = location.search;
+      const hitSignal = Math.hypot(nativeX - 854, nativeY - 72) <= 60;
 
-      document.documentElement.style.visibility = "hidden";
-      if (batSignal) location.replace(`../${originalQuery}`);
-      else if (spiderSignal) location.replace(`../spider/${originalQuery}`);
-      else location.replace("https://github.com/Niyants101");
+      if (!hitSignal) {
+        document.documentElement.style.visibility = "hidden";
+        location.replace("https://github.com/Niyants101");
+      }
     })();
   </script>
 </head>

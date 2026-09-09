@@ -11,7 +11,6 @@ const temporaryRoot = mkdtempSync(join(tmpdir(), "niyant-profile-banner-"));
 const readmePath = join(temporaryRoot, "README.md");
 const statePath = join(temporaryRoot, "state.json");
 const scriptPath = join(projectRoot, "scripts", "rotate-profile-theme.mjs");
-const randomGateway = "https://niyants101.github.io/Niyants101/gateway/random/";
 
 copyFileSync(join(projectRoot, "README.md"), readmePath);
 copyFileSync(join(projectRoot, ".profile-theme.json"), statePath);
@@ -39,14 +38,15 @@ let files = runRotation(0);
 assert.equal(files.state.current, "spider");
 assert.equal(files.state.lastRoll, 0);
 assert.match(files.readme, /assets\/spider-night-shift\.gif/);
-assert.ok(files.readme.includes(randomGateway));
+assert.match(files.readme, /Niyants101\/gateway\/spider\//);
 
 files = runRotation(1);
 assert.equal(files.state.current, "batman");
 assert.equal(files.state.lastRoll, 1);
 assert.match(files.readme, /assets\/night-shift-final\.gif/);
-assert.ok(files.readme.includes(randomGateway));
+assert.match(files.readme, /Niyants101\/gateway\//);
+assert.doesNotMatch(files.readme, /gateway\/spider\//);
 assert.equal((files.readme.match(/PROFILE_THEME_START/g) || []).length, 1);
 assert.equal((files.readme.match(/PROFILE_THEME_END/g) || []).length, 1);
 
-process.stdout.write("PASS: the optional static banner selector always links to the random gateway\n");
+process.stdout.write("PASS: every static profile animation links to its matching game\n");

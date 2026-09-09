@@ -8,16 +8,16 @@ const projectRoot = resolve(scriptDirectory, "..");
 const readmePath = resolve(projectRoot, process.env.PROFILE_README_FILE || "README.md");
 const statePath = resolve(projectRoot, process.env.PROFILE_STATE_FILE || ".profile-theme.json");
 const requestedTheme = (process.env.PROFILE_THEME || "random").toLowerCase();
-const randomGateway = "https://niyants101.github.io/Niyants101/gateway/random/";
-
 const themes = {
   batman: {
-    title: "Enter the random hero signal",
+    destination: "https://niyants101.github.io/Niyants101/gateway/",
+    title: "Enter the Bat Signal",
     image: "./assets/night-shift-final.gif",
     alt: "Niyant's Batman Night Shift",
   },
   spider: {
-    title: "Enter the random hero signal",
+    destination: "https://niyants101.github.io/Niyants101/gateway/spider/",
+    title: "Enter the Spider Signal",
     image: "./assets/spider-night-shift.gif",
     alt: "Niyant's Spider Man Night Shift",
   },
@@ -46,7 +46,7 @@ if (Number.isNaN(now.getTime())) throw new Error("PROFILE_NOW must be a valid da
 
 const profileBlock = [
   "<!-- PROFILE_THEME_START -->",
-  `<div align="center"><a href="${randomGateway}" title="${theme.title}"><img width="840" height="364" src="${theme.image}" alt="${theme.alt}" ismap></a></div>`,
+  `<div align="center"><a href="${theme.destination}" title="${theme.title}"><img width="840" height="364" src="${theme.image}" alt="${theme.alt}" ismap></a></div>`,
   "<!-- PROFILE_THEME_END -->",
 ].join("\n");
 
@@ -64,5 +64,5 @@ writeFileSync(statePath, `${JSON.stringify({
 }, null, 2)}\n`);
 
 process.stdout.write(
-  `Static profile banner selected: ${selectedTheme}. The linked gateway rerolls on every load.\n`,
+  `Static profile banner selected: ${selectedTheme}. It links to the matching game.\n`,
 );

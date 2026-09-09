@@ -174,8 +174,8 @@ function frameSvg(frameIndex) {
   <rect width="960" height="416" rx="16" fill="url(#sky)"/>
   <g fill="#aabfff" opacity=".48"><circle cx="470" cy="38" r="1.5"/><circle cx="575" cy="112" r="1"/><circle cx="740" cy="41" r="1.5"/><circle cx="913" cy="145" r="1"/></g>
   ${buildings(farOffset, 0)}${buildings(nearOffset, 1)}
-  <circle cx="520" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
-  <image href="data:image/png;base64,${signal}" x="466" y="18" width="108" height="108"/>
+  <circle cx="854" cy="72" r="75" fill="url(#signal)" filter="url(#soft)"/>
+  <image href="data:image/png;base64,${signal}" x="800" y="18" width="108" height="108"/>
   <g fill="#080a18"><rect x="315" y="80" width="90" height="282"/><rect x="635" y="70" width="90" height="292"/><rect x="930" y="80" width="30" height="282"/></g>
   <g fill="#3a3158"><rect x="330" y="112" width="14" height="22"/><rect x="660" y="102" width="14" height="22"/><rect x="692" y="102" width="14" height="22"/><rect x="942" y="112" width="12" height="22"/></g>
   <g stroke="#f1fbff" stroke-width="2"><path d="M360 80V54"/><path d="M680 70V44"/><path d="M1014 80V54"/></g>

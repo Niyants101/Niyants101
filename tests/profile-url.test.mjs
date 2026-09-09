@@ -27,6 +27,6 @@ const readme = readFileSync(readmePath, "utf8");
 assert.ok(readme.includes(`src="${workerUrl}"`));
 assert.equal((readme.match(/PROFILE_THEME_START/g) || []).length, 1);
 assert.equal((readme.match(/PROFILE_THEME_END/g) || []).length, 1);
-assert.ok(readme.includes("https://niyants101.github.io/Niyants101/gateway/random/"));
+assert.ok(readme.includes("https://niyants101.github.io/Niyants101/gateway/"));
 
-process.stdout.write("PASS: the setup workflow inserts the deployed Worker URL without changing click routing\n");
+process.stdout.write("PASS: the setup workflow inserts a Worker URL without altering the current game link\n");

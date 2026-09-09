@@ -21,8 +21,7 @@ assert.match(gateway, /\.\.\/game\.js/);
 assert.match(gateway, /assets\/spider-night-shift\.gif/);
 assert.match(gateway, /\.\.\/night-shift\.gif/);
 assert.match(gateway, /nativeX - 854/);
-assert.match(gateway, /nativeX - 520/);
-assert.match(gateway, /\.\.\/spider\/\$\{originalQuery\}/);
+assert.doesNotMatch(gateway, /nativeX - 520/);
 assert.match(gateway, /location\.replace\("https:\/\/github\.com\/Niyants101"\)/);
 assert.match(rootEntry, /gateway\/random/);
 
