@@ -2,7 +2,8 @@
   "name": "niyant-random-profile",
   "private": true,
   "scripts": {
-    "build:profiles": "node scripts/build-profile-animations.mjs",
+    "build:profiles": "node scripts/build-profile-animations.mjs && node scripts/build-routing-assets.mjs",
+    "build:routing": "node scripts/build-routing-assets.mjs",
     "deploy": "wrangler deploy",
     "connect-profile": "node scripts/set-profile-worker-url.mjs",
     "test": "node --test tests/*.test.mjs"

@@ -1,7 +1,18 @@
-const IMAGE_PATHS = Object.freeze({
-  batman: "/night-shift-final.gif",
-  spider: "/spider-night-shift.gif",
-});
+const VARIANT_IDS = Object.freeze(["wide", "laptop", "tablet", "mobile", "micro"]);
+
+const IMAGE_PATHS = Object.freeze(Object.fromEntries(VARIANT_IDS.map((variant) => [
+  variant,
+  Object.freeze({
+    batman: `/night-shift-${variant}.gif`,
+    spider: `/spider-night-shift-${variant}.gif`,
+  }),
+])));
+
+export function variantFromPath(pathname) {
+  if (pathname === "/profile.gif") return "wide";
+  const match = pathname.match(/^\/profile-(wide|laptop|tablet|mobile|micro)\.gif$/);
+  return match?.[1] ?? null;
+}
 
 export function themeFromByte(randomByte) {
   return (randomByte & 1) === 1 ? "batman" : "spider";
@@ -34,7 +45,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname !== "/profile.gif") {
+    const variant = variantFromPath(url.pathname);
+    if (!variant) {
       return new Response("Niyant random profile image\n", {
         status: 404,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
@@ -49,10 +61,10 @@ export default {
     }
 
     const forcedTheme = url.searchParams.get("theme");
-    const theme = Object.hasOwn(IMAGE_PATHS, forcedTheme)
+    const theme = Object.hasOwn(IMAGE_PATHS[variant], forcedTheme)
       ? forcedTheme
       : chooseTheme();
-    const assetUrl = new URL(IMAGE_PATHS[theme], "https://assets.local");
+    const assetUrl = new URL(IMAGE_PATHS[variant][theme], "https://assets.local");
     const image = await env.ASSETS.fetch(assetUrl);
 
     if (!image.ok) {

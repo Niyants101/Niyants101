@@ -7,8 +7,11 @@ const HEIGHT = 416;
 const FPS = 30;
 const DURATION = 7.2;
 const FRAME_COUNT = Math.round(FPS * DURATION);
-const SIGNAL_CENTER_X = 736;
-const SIGNAL_CENTER_Y = 72;
+// Keep the Spider Signal on the exact same visible point as the Bat Signal.
+// The routing build adds invisible canvas geometry later; the artwork itself
+// remains perfectly aligned between themes.
+const SIGNAL_CENTER_X = 855;
+const SIGNAL_CENTER_Y = 74;
 const SIGNAL_SIZE = 96;
 const projectRoot = path.resolve(__dirname, "..");
 const frameDirectory = process.env.SPIDER_FRAME_DIR || path.join(__dirname, ".spider-frames");

@@ -6,6 +6,13 @@
   "assets": {
     "directory": "./assets",
     "binding": "ASSETS",
-    "run_worker_first": ["/profile.gif"]
+    "run_worker_first": [
+      "/profile.gif",
+      "/profile-wide.gif",
+      "/profile-laptop.gif",
+      "/profile-tablet.gif",
+      "/profile-mobile.gif",
+      "/profile-micro.gif"
+    ]
   }
 }

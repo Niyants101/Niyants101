@@ -8,65 +8,75 @@ const require = createRequire(import.meta.url);
 const testDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDirectory, "..");
 const router = require("../gateway/random/signal-router.js");
-const signals = Object.fromEntries(router.SIGNALS.map((signal) => [signal.theme, signal]));
 const destinations = { batman: "../", spider: "../spider/" };
 
-const signalDistance = Math.hypot(
-  signals.batman.x - signals.spider.x,
-  signals.batman.y - signals.spider.y,
-);
-assert.ok(
-  signalDistance > signals.batman.radius + signals.spider.radius,
-  "Batman and Spider Man click areas must never overlap",
-);
+for (const viewportWidth of [280, 320, 390, 480, 700, 768, 1024, 1280, 1440, 2560]) {
+  const variant = router.geometry.variantForViewport(viewportWidth);
+  const signals = Object.fromEntries(["batman", "spider"].map((theme) => [
+    theme,
+    router.geometry.signalForTheme(theme, variant),
+  ]));
+  const horizontalGap = signals.spider.x - signals.batman.x
+    - router.HIT_TOLERANCE * (signals.batman.radiusX + signals.spider.radiusX);
+  assert.ok(horizontalGap > 0.5, `${variant.id} click areas must have a rounding-safe gap`);
 
-for (const viewportWidth of [320, 390, 768, 1024, 1440, 2560]) {
-  const scale = router.profileImageWidth(viewportWidth) / 960;
-  for (const signal of router.SIGNALS) {
+  for (const [theme, signal] of Object.entries(signals)) {
     const interiorPoints = [
       [0, 0],
-      [0.82, 0],
-      [-0.82, 0],
-      [0, 0.82],
-      [0, -0.82],
-      [0.56, 0.56],
-      [-0.56, 0.56],
-      [0.56, -0.56],
-      [-0.56, -0.56],
+      [0.72, 0],
+      [-0.72, 0],
+      [0, 0.72],
+      [0, -0.72],
+      [0.48, 0.48],
+      [-0.48, 0.48],
+      [0.48, -0.48],
+      [-0.48, -0.48],
     ];
 
     for (const [horizontal, vertical] of interiorPoints) {
-      const clickedX = Math.round((signal.x + signal.radius * horizontal) * scale);
-      const clickedY = Math.round((signal.y + signal.radius * vertical) * scale);
+      const clickedX = Math.round(signal.x + signal.radiusX * horizontal);
+      const clickedY = Math.round(signal.y + signal.radiusY * vertical);
       assert.equal(
         router.themeFromClick(clickedX, clickedY, viewportWidth),
-        signal.theme,
-        `${signal.theme} logo must route correctly at ${viewportWidth}px`,
+        theme,
+        `${theme} logo must route correctly at ${viewportWidth}px`,
       );
       assert.equal(
         router.destinationFromQuery(`?${clickedX},${clickedY}`, viewportWidth),
-        destinations[signal.theme],
+        destinations[theme],
+      );
+    }
+
+    for (let degrees = 0; degrees < 360; degrees += 15) {
+      const radians = degrees * Math.PI / 180;
+      const clickedX = Math.round(signal.x + signal.radiusX * Math.cos(radians));
+      const clickedY = Math.round(signal.y + signal.radiusY * Math.sin(radians));
+      assert.equal(
+        router.themeFromClick(clickedX, clickedY, viewportWidth),
+        theme,
+        `${theme} outer logo edge must route correctly at ${viewportWidth}px and ${degrees} degrees`,
       );
     }
   }
 }
 
 assert.equal(router.themeFromClick(0, 0, 1440), null);
-const gapDistance = signalDistance - signals.batman.radius - signals.spider.radius;
-const gapProgress = (signals.spider.radius + gapDistance / 2) / signalDistance;
-const gapX = signals.spider.x + (signals.batman.x - signals.spider.x) * gapProgress;
-const gapY = signals.spider.y + (signals.batman.y - signals.spider.y) * gapProgress;
-assert.equal(router.themeFromClick(gapX * 0.875, gapY * 0.875, 1440), null);
+const wide = router.geometry.variantForViewport(1440);
+const wideBatman = router.geometry.signalForTheme("batman", wide);
+const wideSpider = router.geometry.signalForTheme("spider", wide);
+const gapX = (wideBatman.x + wideBatman.radiusX + wideSpider.x - wideSpider.radiusX) / 2;
+assert.equal(router.themeFromClick(gapX, wideBatman.y, 1440), null);
 assert.equal(router.destinationFromQuery("", 1440), null);
 assert.equal(router.destinationFromQuery("?not-coordinates", 1440), null);
 
 const gateway = readFileSync(resolve(projectRoot, "gateway/random/index.html"), "utf8");
 const rootEntry = readFileSync(resolve(projectRoot, "index.html"), "utf8");
 assert.match(gateway, /signal-router\.js/);
+assert.match(gateway, /routing-geometry\.js/);
 assert.match(gateway, /NiyantSignalRouter\.destinationFromQuery/);
 assert.match(gateway, /location\.replace\(destination/);
 assert.match(gateway, /https:\/\/github\.com\/Niyants101/);
-assert.match(gateway, /full-logo-routing-v2/);
+assert.match(gateway, /hidden-geometry-v1/);
 assert.match(rootEntry, /gateway\/random/);
 
-process.stdout.write("PASS: each full logo routes only to its matching game at every supported profile size\n");
+process.stdout.write("PASS: hidden geometry routes each aligned logo to only its matching game at every size\n");
